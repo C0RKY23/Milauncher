@@ -61,6 +61,21 @@ contextBridge.exposeInMainWorld(
                 ipcRenderer.send(
                     'save-selected-instance',
                     instanceId
+                ),
+
+
+        getSettings:
+            () =>
+                ipcRenderer.invoke(
+                    'get-settings'
+                ),
+
+
+        saveSettings:
+            (settings) =>
+                ipcRenderer.send(
+                    'save-settings',
+                    settings
                 )
 
     }

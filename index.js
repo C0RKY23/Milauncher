@@ -16,6 +16,131 @@ const instancesPath = path.join(
 );
 
 /* =========================
+   CONFIGURACIÓN (RAM / RESOLUCIÓN)
+========================= */
+
+// app.getPath('userData') es una carpeta que Electron crea
+// automáticamente para cada app, distinta a la carpeta del código.
+// Ahí es donde SIEMPRE se deben guardar configuraciones del usuario.
+const settingsPath = path.join(
+    app.getPath('userData'),
+    'settings.json'
+);
+
+const defaultSettings = {
+    ram: 4096,       // en MB (4096 MB = 4 GB)
+    resWidth: 1280,
+    resHeight: 720
+};
+
+function loadSettings() {
+
+    try {
+
+        if (fs.existsSync(settingsPath)) {
+
+            const raw = fs.readFileSync(settingsPath, 'utf8');
+            return { ...defaultSettings, ...JSON.parse(raw) };
+        }
+
+    } catch (error) {
+
+        console.error('Error leyendo settings.json:', error);
+    }
+
+    return { ...defaultSettings };
+}
+
+function saveSettingsToDisk(settings) {
+
+    try {
+
+        fs.writeFileSync(
+            settingsPath,
+            JSON.stringify(settings, null, 2),
+            'utf8'
+        );
+
+    } catch (error) {
+
+        console.error('Error guardando settings.json:', error);
+    }
+}
+
+/* =========================
+   APLICAR CONFIGURACIÓN A UNA INSTANCIA
+   (edita el instance.cfg de Prism antes de lanzar)
+========================= */
+
+function applySettingsToInstance(instanceId, settings) {
+
+    const configPath = path.join(
+        instancesPath,
+        instanceId,
+        'instance.cfg'
+    );
+
+    // Si el archivo no existe todavía, empezamos con el
+    // encabezado que usa Prism/MultiMC.
+    let lines = fs.existsSync(configPath)
+        ? fs.readFileSync(configPath, 'utf8').split('\n')
+        : ['[General]'];
+
+    const updates = {
+        OverrideMemory: 'true',
+        MaxMemAlloc: String(settings.ram),
+        OverrideWindow: 'true',
+        MinecraftWinWidth: String(settings.resWidth),
+        MinecraftWinHeight: String(settings.resHeight)
+    };
+
+    // Si el archivo no trae ya una RAM mínima, le ponemos
+    // un valor seguro por defecto.
+    const hasMinMem = lines.some(
+        line => line.startsWith('MinMemAlloc=')
+    );
+
+    if (!hasMinMem) {
+        updates.MinMemAlloc = '512';
+    }
+
+    const foundKeys = new Set();
+
+    // Reemplazamos las líneas que ya existan...
+    lines = lines.map(line => {
+
+        const match = line.match(/^([^=]+)=(.*)$/);
+
+        if (match && updates.hasOwnProperty(match[1])) {
+
+            foundKeys.add(match[1]);
+            return `${match[1]}=${updates[match[1]]}`;
+        }
+
+        return line;
+    });
+
+    // ...y agregamos al final las que no existían.
+    for (const [key, value] of Object.entries(updates)) {
+
+        if (!foundKeys.has(key)) {
+            lines.push(`${key}=${value}`);
+        }
+    }
+
+    fs.writeFileSync(
+        configPath,
+        lines.filter(Boolean).join('\n') + '\n',
+        'utf8'
+    );
+
+    console.log(
+        `⚙️  Configuración aplicada a ${instanceId}:`,
+        updates
+    );
+}
+
+/* =========================
    CREAR VENTANA
 ========================= */
 
@@ -417,6 +542,22 @@ ipcMain.handle(
 );
 
 /* =========================
+   OBTENER / GUARDAR CONFIGURACIÓN
+========================= */
+
+ipcMain.handle('get-settings', () => {
+
+    return loadSettings();
+});
+
+ipcMain.on('save-settings', (event, settings) => {
+
+    console.log('💾 Guardando configuración:', settings);
+
+    saveSettingsToDisk(settings);
+});
+
+/* =========================
    LANZAR INSTANCIA
 ========================= */
 
@@ -427,6 +568,15 @@ ipcMain.on(
         console.log(
             '🚀 Lanzando instancia:',
             instanceId
+        );
+
+        // Aplicamos la RAM y resolución guardadas en
+        // Configuración justo antes de lanzar el juego.
+        const settings = loadSettings();
+
+        applySettingsToInstance(
+            instanceId,
+            settings
         );
 
         const prism =

@@ -585,7 +585,90 @@ function createDefaultIcon(container) {
 
 
 /* =========================================================
+   CONFIGURACIÓN (RAM / RESOLUCIÓN)
+========================================================= */
+
+const ramSlider =
+    document.getElementById('ram-slider');
+
+const ramValueLabel =
+    document.getElementById('ram-value');
+
+const resolutionSelect =
+    document.getElementById('resolution-select');
+
+
+async function loadSettings() {
+
+    const settings =
+        await window.electronAPI.getSettings();
+
+    // settings.ram viene en MB, el slider trabaja en GB
+    const ramGB =
+        Math.round(settings.ram / 1024);
+
+    ramSlider.value = ramGB;
+
+    ramValueLabel.textContent = `${ramGB} GB`;
+
+
+    const resValue =
+        `${settings.resWidth}x${settings.resHeight}`;
+
+    resolutionSelect.value = resValue;
+
+}
+
+
+function saveCurrentSettings() {
+
+    const ramGB =
+        Number(ramSlider.value);
+
+    const [resWidth, resHeight] =
+        resolutionSelect.value
+            .split('x')
+            .map(Number);
+
+    const settings = {
+        ram: ramGB * 1024, // GB -> MB
+        resWidth,
+        resHeight
+    };
+
+    window.electronAPI.saveSettings(settings);
+
+}
+
+
+// Mientras arrastras el slider, solo actualiza el número en pantalla
+ramSlider.addEventListener('input', () => {
+
+    ramValueLabel.textContent =
+        `${ramSlider.value} GB`;
+
+});
+
+
+// Cuando SUELTAS el slider, ahí sí se guarda (evita escribir el
+// archivo cientos de veces mientras lo arrastras)
+ramSlider.addEventListener('change', () => {
+
+    saveCurrentSettings();
+
+});
+
+
+resolutionSelect.addEventListener('change', () => {
+
+    saveCurrentSettings();
+
+});
+
+
+/* =========================================================
    INICIAR
 ========================================================= */
 
 loadInstances();
+loadSettings();
