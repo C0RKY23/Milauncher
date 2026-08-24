@@ -1,0 +1,469 @@
+const { app, BrowserWindow, ipcMain } = require('electron');
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const { pathToFileURL } = require('url');
+
+let win;
+
+/* =========================
+   RUTA DE PRISM LAUNCHER
+========================= */
+
+const instancesPath = path.join(
+    process.env.HOME,
+    '.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/instances'
+);
+
+/* =========================
+   CREAR VENTANA
+========================= */
+
+function createWindow() {
+    win = new BrowserWindow({
+        width: 1100,
+        height: 700,
+        frame: false,
+        resizable: true,
+
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            sandbox: false
+        }
+    });
+
+    win.loadFile('index.html');
+}
+
+/* =========================
+   BOTONES DE VENTANA
+========================= */
+
+ipcMain.on('window-minimize', () => {
+    win.minimize();
+});
+
+ipcMain.on('window-maximize', () => {
+    if (win.isMaximized()) {
+        win.unmaximize();
+    } else {
+        win.maximize();
+    }
+});
+
+ipcMain.on('window-close', () => {
+    win.close();
+});
+
+/* =========================
+   BUSCAR ICONO
+========================= */
+
+function findIcon(instancePath) {
+
+    /* =========================
+       1. ICONO DE MINECRAFT
+    ========================= */
+
+    const minecraftIcon = path.join(
+        instancePath,
+        'minecraft',
+        'icon.png'
+    );
+
+    if (fs.existsSync(minecraftIcon)) {
+        return pathToFileURL(minecraftIcon).href;
+    }
+
+    /* =========================
+       2. ICONO DIRECTO
+    ========================= */
+
+    const possibleIcons = [
+        'icon.png',
+        'icon.webp',
+        'icon.jpg',
+        'icon.jpeg',
+        'icon.ico'
+    ];
+
+    for (const icon of possibleIcons) {
+
+        const iconPath = path.join(
+            instancePath,
+            icon
+        );
+
+        if (fs.existsSync(iconPath)) {
+            return pathToFileURL(iconPath).href;
+        }
+    }
+
+    /* =========================
+       3. ICONO DE PRISM
+    ========================= */
+
+    const configPath = path.join(
+        instancePath,
+        'instance.cfg'
+    );
+
+    if (fs.existsSync(configPath)) {
+
+        const config =
+            fs.readFileSync(
+                configPath,
+                'utf8'
+            );
+
+        const match =
+            config.match(
+                /^iconKey=(.*)$/m
+            );
+
+        if (match && match[1]) {
+
+            const iconKey =
+                match[1].trim();
+
+            const extensions = [
+                '.webp',
+                '.png',
+                '.jpg',
+                '.jpeg',
+                '.ico'
+            ];
+
+            for (const extension of extensions) {
+
+                const prismIcon =
+                    path.join(
+                        instancesPath,
+                        '..',
+                        'icons',
+                        `${iconKey}${extension}`
+                    );
+
+                if (
+                    fs.existsSync(
+                        prismIcon
+                    )
+                ) {
+                    return pathToFileURL(prismIcon).href;
+                }
+            }
+        }
+    }
+
+    /* =========================
+       4. SIN ICONO
+    ========================= */
+
+    return '';
+}
+
+/* =========================
+   OBTENER INSTANCIAS
+========================= */
+
+ipcMain.handle(
+    'get-instances',
+    () => {
+
+        try {
+
+            const folders =
+                fs.readdirSync(
+                    instancesPath,
+                    {
+                        withFileTypes: true
+                    }
+                );
+
+            const instances = [];
+
+            for (
+                const folder
+                of folders
+            ) {
+
+                if (
+                    !folder.isDirectory()
+                ) {
+                    continue;
+                }
+
+                const instancePath =
+                    path.join(
+                        instancesPath,
+                        folder.name
+                    );
+
+                const configPath =
+                    path.join(
+                        instancePath,
+                        'instance.cfg'
+                    );
+
+                let name =
+                    folder.name;
+
+                let minecraft =
+                    'Desconocido';
+
+                let loader =
+                    'Vanilla';
+
+                let java =
+                    'Automática';
+
+                let ram =
+                    'Automática';
+
+                /* =========================
+                   LEER CONFIG
+                ========================= */
+
+                if (
+                    fs.existsSync(
+                        configPath
+                    )
+                ) {
+
+                    const config =
+                        fs.readFileSync(
+                            configPath,
+                            'utf8'
+                        );
+
+                    const getValue =
+                        (key) => {
+
+                            const match =
+                                config.match(
+                                    new RegExp(
+                                        `^${key}=(.*)$`,
+                                        'm'
+                                    )
+                                );
+
+                            return match
+                                ? match[1]
+                                : null;
+                        };
+
+                    const configName =
+                        getValue('name');
+
+                    if (configName) {
+                        name =
+                            configName;
+                    }
+
+                    const maxRam =
+                        getValue(
+                            'MaxMemAlloc'
+                        );
+
+                    if (maxRam) {
+                        ram =
+                            `${maxRam} MB`;
+                    }
+
+                    const javaVersion =
+                        getValue(
+                            'JavaVersion'
+                        );
+
+                    if (javaVersion) {
+                        java =
+                            javaVersion;
+                    }
+                }
+
+                /* =========================
+                   LEER mmc-pack.json
+                ========================= */
+
+                const packPath =
+                    path.join(
+                        instancePath,
+                        'mmc-pack.json'
+                    );
+
+                if (
+                    fs.existsSync(
+                        packPath
+                    )
+                ) {
+
+                    try {
+
+                        const pack =
+                            JSON.parse(
+                                fs.readFileSync(
+                                    packPath,
+                                    'utf8'
+                                )
+                            );
+
+                        for (
+                            const component
+                            of pack.components || []
+                        ) {
+
+                            if (
+                                component.uid ===
+                                'net.minecraft'
+                            ) {
+
+                                minecraft =
+                                    component.version ||
+                                    minecraft;
+                            }
+
+                            if (
+                                component.uid ===
+                                'net.fabricmc.fabric-loader'
+                            ) {
+
+                                loader =
+                                    `Fabric ${component.version}`;
+                            }
+
+                            if (
+                                component.uid ===
+                                'net.minecraftforge'
+                            ) {
+
+                                loader =
+                                    `Forge ${component.version}`;
+                            }
+
+                            if (
+                                component.uid ===
+                                'org.quiltmc.quilt-loader'
+                            ) {
+
+                                loader =
+                                    `Quilt ${component.version}`;
+                            }
+                        }
+
+                    } catch (error) {
+
+                        console.error(
+                            'Error leyendo mmc-pack.json:',
+                            error
+                        );
+                    }
+                }
+
+                /* =========================
+                   BUSCAR ICONO
+                ========================= */
+
+                const icon =
+                    findIcon(
+                        instancePath
+                    );
+
+                /* =========================
+                   GUARDAR INSTANCIA
+                ========================= */
+
+                instances.push({
+                    id:
+                        folder.name,
+
+                    name:
+                        name,
+
+                    minecraft:
+                        minecraft,
+
+                    loader:
+                        loader,
+
+                    java:
+                        java,
+
+                    ram:
+                        ram,
+
+                    icon:
+                        icon
+                });
+            }
+
+            console.log(
+                '📦 Instancias encontradas:',
+                instances
+            );
+
+            return instances;
+
+        } catch (error) {
+
+            console.error(
+                'Error leyendo instancias:',
+                error
+            );
+
+            return [];
+        }
+    }
+);
+
+/* =========================
+   LANZAR INSTANCIA
+========================= */
+
+ipcMain.on(
+    'launch-instance',
+    (event, instanceId) => {
+
+        console.log(
+            '🚀 Lanzando instancia:',
+            instanceId
+        );
+
+        const prism =
+            spawn(
+                'flatpak',
+                [
+                    'run',
+                    'org.prismlauncher.PrismLauncher',
+                    '--launch',
+                    instanceId
+                ],
+                {
+                    detached: true,
+                    stdio: 'ignore'
+                }
+            );
+
+        prism.unref();
+    }
+);
+
+/* =========================
+   ELECTRON
+========================= */
+
+app.whenReady()
+    .then(createWindow);
+
+app.on(
+    'window-all-closed',
+    () => {
+
+        if (
+            process.platform !==
+            'darwin'
+        ) {
+            app.quit();
+        }
+    }
+);

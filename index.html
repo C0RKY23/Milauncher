@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiLauncher</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="launcher">
+
+    <!-- =================================================
+         BARRA SUPERIOR
+    ================================================== -->
+
+    <header class="topbar">
+
+        <div class="logo">
+            <span class="logo-mark">M</span>
+            <span>MiLauncher</span>
+        </div>
+
+        <div class="window-buttons">
+
+            <button id="minimize" title="Minimizar">
+                <svg viewBox="0 0 24 24">
+                    <path d="M5 12h14"/>
+                </svg>
+            </button>
+
+            <button id="maximize" title="Maximizar">
+                <svg viewBox="0 0 24 24">
+                    <rect x="5" y="5" width="14" height="14" rx="1"/>
+                </svg>
+            </button>
+
+            <button id="close" title="Cerrar">
+                <svg viewBox="0 0 24 24">
+                    <path d="M6 6l12 12M18 6L6 18"/>
+                </svg>
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================
+         CONTENIDO
+    ================================================== -->
+
+    <main class="main-area">
+
+        <!-- =================================================
+             SIDEBAR
+        ================================================== -->
+
+        <aside class="sidebar">
+
+            <div class="sidebar-section">
+
+                <span class="sidebar-label">
+                    LAUNCHER
+                </span>
+
+                <div class="sidebar-item active" data-page="home">
+
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 11.5L12 4l9 7.5"/>
+                        <path d="M5 10.5V20h14v-9.5"/>
+                        <path d="M9 20v-5h6v5"/>
+                    </svg>
+
+                    <span>Inicio</span>
+
+                </div>
+
+
+                <div class="sidebar-item" data-page="play">
+
+                    <svg viewBox="0 0 24 24">
+                        <path d="M8 5l11 7-11 7V5z"/>
+                    </svg>
+
+                    <span>Jugar</span>
+
+                </div>
+
+
+                <div class="sidebar-item" data-page="versions">
+
+                    <svg viewBox="0 0 24 24">
+                        <rect x="5" y="4" width="14" height="16" rx="2"/>
+                        <path d="M8 8h8M8 12h8M8 16h5"/>
+                    </svg>
+
+                    <span>Versiones</span>
+
+                </div>
+
+            </div>
+
+
+            <div class="sidebar-section">
+
+                <span class="sidebar-label">
+                    SISTEMA
+                </span>
+
+
+                <div class="sidebar-item" data-page="account">
+
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="3"/>
+                        <path d="M5 20c.8-3.3 3.1-5 7-5s6.2 1.7 7 5"/>
+                    </svg>
+
+                    <span>Cuenta</span>
+
+                </div>
+
+
+                <div class="sidebar-item" data-page="settings">
+
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.6v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.5-1H6.4v-2.6h.1A1.7 1.7 0 0 0 8 10a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V5h2.6v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1V14h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+                    </svg>
+
+                    <span>Configuración</span>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <!-- =================================================
+             PÁGINAS
+        ================================================== -->
+
+        <section class="pages">
+
+
+            <!-- =================================================
+                 INICIO
+            ================================================== -->
+
+            <div class="page active" id="page-home">
+
+                <div class="home-content">
+
+                    <div class="minecraft-title">
+                        MINECRAFT
+                    </div>
+
+                    <div class="subtitle">
+                        Tu launcher. Tu Minecraft.
+                    </div>
+
+                    <button class="play-button" id="play-button">
+
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8 5l11 7-11 7V5z"/>
+                        </svg>
+
+                        <span>JUGAR</span>
+
+                    </button>
+
+
+                    <div id="selected-instance" class="selected-instance">
+
+                        <span>Instancia</span>
+
+                        <strong>
+                            Cliente
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 JUGAR
+            ================================================== -->
+
+            <div class="page" id="page-play">
+
+                <div class="page-header">
+
+                    <span class="page-eyebrow">
+                        LANZADOR
+                    </span>
+
+                    <h1>
+                        Jugar Minecraft
+                    </h1>
+
+                    <p>
+                        Inicia tu instancia seleccionada.
+                    </p>
+
+                </div>
+
+
+                <div class="play-card">
+
+                    <div class="play-card-icon">
+
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 4h10v5H7z"/>
+                            <path d="M5 9h14v11H5z"/>
+                            <path d="M9 9v4M15 9v4"/>
+                            <path d="M9 17h6"/>
+                        </svg>
+
+                    </div>
+
+
+                    <div class="play-card-info">
+
+                        <span>
+                            INSTANCIA
+                        </span>
+
+                        <strong id="play-instance-name">
+                            Cliente
+                        </strong>
+
+                        <small id="play-instance-info">
+                            Minecraft
+                        </small>
+
+                    </div>
+
+
+                    <button class="play-button small" id="play-instance">
+
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8 5l11 7-11 7V5z"/>
+                        </svg>
+
+                        <span>JUGAR</span>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 VERSIONES
+            ================================================== -->
+
+            <div class="page" id="page-versions">
+
+                <div class="page-header">
+
+                    <span class="page-eyebrow">
+                        INSTALACIONES
+                    </span>
+
+                    <h1>
+                        Versiones
+                    </h1>
+
+                    <p>
+                        Selecciona la instalación que quieras jugar.
+                    </p>
+
+                </div>
+
+
+                <div id="instances-list" class="instances-list">
+
+                    <div class="loading">
+                        Cargando instalaciones...
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 CUENTA
+            ================================================== -->
+
+            <div class="page" id="page-account">
+
+                <div class="page-header">
+
+                    <span class="page-eyebrow">
+                        PERFIL
+                    </span>
+
+                    <h1>
+                        Cuenta
+                    </h1>
+
+                </div>
+
+
+                <div class="account-card">
+
+                    <div class="big-avatar"></div>
+
+                    <div>
+
+                        <strong>
+                            CORKY_
+                        </strong>
+
+                        <span>
+                            Cuenta local
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 CONFIGURACIÓN
+            ================================================== -->
+
+            <div class="page" id="page-settings">
+
+                <div class="page-header">
+
+                    <span class="page-eyebrow">
+                        SISTEMA
+                    </span>
+
+                    <h1>
+                        Configuración
+                    </h1>
+
+                    <p>
+                        Ajusta las opciones del launcher.
+                    </p>
+
+                </div>
+
+
+                <div class="settings-list">
+
+                    <div class="setting">
+
+                        <div>
+
+                            <span>
+                                RAM asignada
+                            </span>
+
+                            <small>
+                                Memoria utilizada por Minecraft
+                            </small>
+
+                        </div>
+
+                        <strong>
+                            4 GB
+                        </strong>
+
+                    </div>
+
+
+                    <div class="setting">
+
+                        <div>
+
+                            <span>
+                                Resolución
+                            </span>
+
+                            <small>
+                                Resolución predeterminada del juego
+                            </small>
+
+                        </div>
+
+                        <strong>
+                            1280 × 720
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =================================================
+         BARRA INFERIOR
+    ================================================== -->
+
+    <footer class="bottom-bar">
+
+        <div class="profile">
+
+            <div class="avatar">
+                <span>C</span>
+            </div>
+
+            <div>
+
+                <strong>
+                    CORKY_
+                </strong>
+
+                <span>
+                    Perfil local
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="version">
+
+            <span>MiLauncher</span>
+
+            <strong>
+                1.0
+            </strong>
+
+        </div>
+
+    </footer>
+
+</div>
+
+
+<script src="renderer.js"></script>
+
+
+
+</body>
+</html>

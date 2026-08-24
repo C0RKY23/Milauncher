@@ -1,0 +1,1160 @@
+/* =========================================================
+   MILAUNCHER
+   MINIMAL GAMING / GLASSMORPHISM - PURPLE EDITION
+========================================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --purple: #a855f7;
+    --purple-dark: #6d28d9;
+    --purple-light: #c084fc;
+    --purple-glow: rgba(168, 85, 247, 0.35);
+
+    --glass: rgba(12, 15, 18, 0.72);
+    --glass-light: rgba(255, 255, 255, 0.055);
+    --border: rgba(255, 255, 255, 0.10);
+
+    --text: #ffffff;
+    --muted: rgba(255, 255, 255, 0.55);
+}
+
+/* =========================================================
+   BASE
+========================================================= */
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    background: #08070c;
+    color: var(--text);
+}
+
+/* =========================================================
+   LAUNCHER
+========================================================= */
+
+.launcher {
+    width: 100vw;
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(7, 4, 10, 0.55),
+            rgba(0, 0, 0, 0.82)
+        ),
+        url("assets/fondo.jpg");
+
+    background-size: cover;
+    background-position: center;
+
+    position: relative;
+}
+
+.launcher::before {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    background:
+        radial-gradient(
+            circle at 70% 40%,
+            rgba(168, 85, 247, 0.12),
+            transparent 35%
+        );
+
+    pointer-events: none;
+}
+
+/* =========================================================
+   BARRA SUPERIOR
+========================================================= */
+
+.topbar {
+    height: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 22px;
+
+    background: rgba(8, 7, 12, 0.68);
+
+    border-bottom:
+        1px solid rgba(255, 255, 255, 0.08);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    -webkit-app-region: drag;
+
+    position: relative;
+    z-index: 10;
+}
+
+.logo {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+
+    text-shadow:
+        0 0 18px rgba(192, 132, 252, 0.30);
+}
+
+.window-buttons {
+    display: flex;
+    gap: 7px;
+
+    -webkit-app-region: no-drag;
+}
+
+.window-buttons button {
+    width: 34px;
+    height: 30px;
+
+    border: 1px solid transparent;
+    border-radius: 7px;
+
+    background: rgba(255, 255, 255, 0.055);
+
+    color: rgba(255, 255, 255, 0.75);
+
+    font-size: 17px;
+    cursor: pointer;
+
+    transition:
+        background 0.18s,
+        color 0.18s,
+        transform 0.18s;
+}
+
+.window-buttons button:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: white;
+
+    transform: translateY(-1px);
+}
+
+#close:hover {
+    background: rgba(220, 55, 55, 0.75);
+}
+
+/* =========================================================
+   CONTENIDO
+========================================================= */
+
+.main-area {
+    flex: 1;
+
+    display: flex;
+
+    min-height: 0;
+
+    position: relative;
+    z-index: 2;
+}
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar {
+    width: 220px;
+
+    padding: 22px 14px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+
+    background: rgba(8, 7, 12, 0.72);
+
+    border-right:
+        1px solid rgba(255, 255, 255, 0.07);
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    flex-shrink: 0;
+}
+
+/* =========================================================
+   SIDEBAR ITEM
+========================================================= */
+
+.sidebar-item {
+    height: 46px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+
+    padding: 0 15px;
+
+    border-radius: 9px;
+
+    color: rgba(255, 255, 255, 0.48);
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+
+    -webkit-app-region: no-drag;
+
+    position: relative;
+}
+
+/* =========================================================
+   ICONOS SIDEBAR
+========================================================= */
+
+.sidebar-icon {
+    width: 18px;
+    height: 18px;
+
+    flex-shrink: 0;
+
+    fill: none;
+    stroke: currentColor;
+
+    stroke-width: 1.8;
+
+    stroke-linecap: round;
+    stroke-linejoin: round;
+
+    opacity: 0.65;
+
+    transition:
+        transform 0.18s ease,
+        opacity 0.18s ease,
+        filter 0.18s ease;
+}
+
+/* =========================================================
+   HOVER
+========================================================= */
+
+.sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.055);
+
+    color: white;
+
+    transform: translateX(2px);
+}
+
+.sidebar-item:hover .sidebar-icon {
+    opacity: 1;
+
+    transform: scale(1.06);
+}
+
+/* =========================================================
+   ACTIVO
+========================================================= */
+
+.sidebar-item.active {
+    background:
+        linear-gradient(
+            90deg,
+            rgba(168, 85, 247, 0.20),
+            rgba(168, 85, 247, 0.035)
+        );
+
+    color: white;
+
+    box-shadow:
+        inset 2px 0 0 var(--purple);
+}
+
+.sidebar-item.active .sidebar-icon {
+    opacity: 1;
+
+    filter:
+        drop-shadow(
+            0 0 6px
+            rgba(168, 85, 247, 0.55)
+        );
+}
+
+/* =========================================================
+   PÁGINAS
+========================================================= */
+
+.pages {
+    flex: 1;
+
+    min-width: 0;
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+.page {
+    position: absolute;
+    inset: 0;
+
+    display: none;
+
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+
+    padding: 50px;
+
+    overflow: hidden;
+
+    -webkit-app-region: no-drag;
+}
+
+.page.active {
+    display: flex;
+
+    animation:
+        pageIn 0.28s ease;
+}
+
+@keyframes pageIn {
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0);
+    }
+}
+
+.page h1 {
+    font-size: 34px;
+
+    font-weight: 800;
+
+    letter-spacing: -0.5px;
+
+    margin-bottom: 8px;
+}
+
+.page p {
+    color: var(--muted);
+
+    font-size: 14px;
+
+    margin-bottom: 25px;
+}
+
+/* =========================================================
+   INICIO
+========================================================= */
+
+.minecraft-title {
+    font-size: 72px;
+
+    font-weight: 950;
+
+    letter-spacing: -2px;
+
+    text-shadow:
+        4px 5px 0 #000,
+        0 0 35px
+        rgba(192, 132, 252, 0.20);
+
+    transform:
+        scaleX(1.02);
+}
+
+.subtitle {
+    margin-top: 7px;
+
+    font-size: 15px;
+
+    color:
+        rgba(255, 255, 255, 0.60);
+
+    letter-spacing: 1px;
+}
+
+/* =========================================================
+   INSTANCIA SELECCIONADA
+========================================================= */
+
+.selected-instance {
+    margin-top: 24px;
+
+    padding: 9px 16px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(0, 0, 0, 0.42);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.09);
+
+    color:
+        rgba(255, 255, 255, 0.55);
+
+    font-size: 12px;
+
+    backdrop-filter: blur(12px);
+}
+
+.selected-instance strong {
+    color: white;
+
+    margin-left: 3px;
+}
+
+/* =========================================================
+   BOTÓN JUGAR
+========================================================= */
+
+.play-button {
+    margin-top: 34px;
+
+    width: 240px;
+    height: 62px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.12);
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #c084fc,
+            #7c3aed
+        );
+
+    color: white;
+
+    font-size: 19px;
+
+    font-weight: 850;
+
+    letter-spacing: 1px;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 8px 0 #4c1d95,
+        0 12px 35px
+        rgba(168, 85, 247, 0.28);
+
+    transition:
+        transform 0.16s,
+        box-shadow 0.16s,
+        filter 0.16s;
+
+    -webkit-app-region: no-drag;
+}
+
+.play-button:hover {
+    transform:
+        translateY(-3px);
+
+    filter:
+        brightness(1.08);
+
+    box-shadow:
+        0 11px 0 #4c1d95,
+        0 18px 45px
+        rgba(168, 85, 247, 0.42);
+}
+
+.play-button:active {
+    transform:
+        translateY(5px);
+
+    box-shadow:
+        0 3px 0 #4c1d95;
+}
+
+/* =========================================================
+   BOTÓN PEQUEÑO
+========================================================= */
+
+.play-button.small {
+    width: 150px;
+    height: 44px;
+
+    margin-top: 0;
+
+    font-size: 13px;
+
+    border-radius: 9px;
+
+    box-shadow:
+        0 5px 0 #4c1d95,
+        0 8px 22px
+        rgba(168, 85, 247, 0.22);
+}
+
+/* =========================================================
+   TARJETAS GENERALES
+========================================================= */
+
+.play-card,
+.account-card,
+.version-card,
+.setting {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.065),
+            rgba(0, 0, 0, 0.38)
+        );
+
+    border:
+        1px solid rgba(255, 255, 255, 0.10);
+
+    border-radius: 16px;
+
+    padding: 22px;
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    box-shadow:
+        0 15px 40px
+        rgba(0, 0, 0, 0.28);
+}
+
+/* =========================================================
+   TARJETA JUGAR
+========================================================= */
+
+.play-card {
+    width: 380px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+
+    text-align: left;
+}
+
+.play-card strong {
+    font-size: 20px;
+}
+
+.play-card span {
+    color: var(--muted);
+
+    font-size: 13px;
+}
+
+/* =========================================================
+   CUENTA
+========================================================= */
+
+.account-card {
+    width: 380px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 16px;
+
+    text-align: left;
+}
+
+.account-card strong {
+    font-size: 18px;
+}
+
+.account-card span {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 13px;
+
+    margin-top: 4px;
+}
+
+.big-avatar {
+    width: 62px;
+    height: 62px;
+
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #444,
+            #181818
+        );
+
+    border:
+        1px solid rgba(255, 255, 255, 0.10);
+
+    box-shadow:
+        inset 0 0 20px
+        rgba(0, 0, 0, 0.45);
+}
+
+/* =========================================================
+   CONFIGURACIÓN
+========================================================= */
+
+.setting {
+    width: 420px;
+
+    margin: 5px;
+
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 17px 20px;
+
+    color:
+        rgba(255, 255, 255, 0.70);
+}
+
+.setting strong {
+    color: white;
+}
+
+/* =========================================================
+   BARRA INFERIOR
+========================================================= */
+
+.bottom-bar {
+    height: 68px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 24px;
+
+    background:
+        rgba(7, 6, 11, 0.78);
+
+    border-top:
+        1px solid rgba(255, 255, 255, 0.07);
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    position: relative;
+    z-index: 10;
+}
+
+/* =========================================================
+   PERFIL
+========================================================= */
+
+.profile {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+}
+
+.profile strong {
+    display: block;
+
+    font-size: 13px;
+}
+
+.profile span {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 11px;
+
+    margin-top: 3px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #444,
+            #181818
+        );
+
+    border:
+        1px solid rgba(255, 255, 255, 0.10);
+}
+
+/* =========================================================
+   VERSION
+========================================================= */
+
+.version {
+    color:
+        rgba(255, 255, 255, 0.38);
+
+    font-size: 11px;
+}
+
+.version strong {
+    color:
+        rgba(255, 255, 255, 0.70);
+
+    margin-left: 4px;
+}
+
+/* =========================================================
+   INSTANCIAS
+========================================================= */
+
+.instances-list {
+    width: 100%;
+
+    max-width: 760px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    max-height: 460px;
+
+    overflow-y: auto;
+
+    padding:
+        6px 8px 10px 6px;
+}
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+.instances-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.instances-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.instances-list::-webkit-scrollbar-thumb {
+    background:
+        rgba(168, 85, 247, 0.45);
+
+    border-radius: 10px;
+}
+
+.instances-list::-webkit-scrollbar-thumb:hover {
+    background:
+        rgba(192, 132, 252, 0.65);
+}
+
+/* =========================================================
+   TARJETA DE INSTANCIA
+========================================================= */
+
+.instance-card {
+    width: 100%;
+
+    min-height: 92px;
+
+    padding: 14px 16px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(18, 16, 25, 0.82),
+            rgba(5, 4, 9, 0.68)
+        );
+
+    border:
+        1px solid rgba(255, 255, 255, 0.09);
+
+    border-radius: 15px;
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+
+    box-shadow:
+        0 8px 25px
+        rgba(0, 0, 0, 0.20);
+
+    cursor: pointer;
+
+    transition:
+        transform 0.20s,
+        border 0.20s,
+        background 0.20s,
+        box-shadow 0.20s;
+}
+
+/* =========================================================
+   ICONO DE INSTANCIA
+========================================================= */
+
+.instance-icon {
+    width: 62px;
+    height: 62px;
+
+    min-width: 62px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    position: relative;
+
+    border-radius: 12px;
+
+    background:
+        rgba(255, 255, 255, 0.055);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.08);
+
+    font-size: 27px;
+
+    box-shadow:
+        inset 0 0 15px
+        rgba(0, 0, 0, 0.35);
+}
+
+/*
+   IMPORTANTE:
+   Las imágenes de las instancias NO reciben
+   color, stroke, fill ni filtros.
+*/
+
+.instance-icon img {
+    width: 100%;
+    height: 100%;
+
+    max-width: 100%;
+    max-height: 100%;
+
+    object-fit: contain;
+
+    display: block;
+
+    border-radius: 11px;
+
+    background: transparent;
+
+    opacity: 1;
+
+    filter: none;
+
+    color: initial;
+
+    stroke: initial;
+
+    fill: initial;
+}
+
+/* =========================================================
+   INFORMACIÓN
+========================================================= */
+
+.instance-info {
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 4px;
+
+    text-align: left;
+}
+
+.instance-info strong {
+    font-size: 16px;
+
+    font-weight: 750;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    max-width: 100%;
+}
+
+.instance-info span {
+    color:
+        rgba(255, 255, 255, 0.48);
+
+    font-size: 11px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    max-width: 100%;
+}
+
+/* =========================================================
+   HOVER INSTANCIA
+========================================================= */
+
+.instance-card:hover {
+    transform:
+        translateY(-2px)
+        scale(1.005);
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(42, 28, 55, 0.88),
+            rgba(8, 6, 12, 0.76)
+        );
+
+    border-color:
+        rgba(192, 132, 252, 0.25);
+
+    box-shadow:
+        0 14px 35px
+        rgba(0, 0, 0, 0.32),
+
+        0 0 25px
+        rgba(168, 85, 247, 0.08);
+}
+
+/* =========================================================
+   SELECCIONADA
+========================================================= */
+
+.instance-card.selected {
+    border:
+        1px solid rgba(168, 85, 247, 0.70);
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(109, 40, 217, 0.28),
+            rgba(12, 7, 20, 0.78)
+        );
+
+    box-shadow:
+        0 0 0 1px
+        rgba(168, 85, 247, 0.12),
+
+        0 10px 35px
+        rgba(168, 85, 247, 0.18);
+}
+
+/* =========================================================
+   BOTÓN SELECCIONADO
+========================================================= */
+
+.instance-card.selected .select-instance {
+    background:
+        linear-gradient(
+            135deg,
+            #a855f7,
+            #7c3aed
+        );
+
+    box-shadow:
+        0 5px 0 #4c1d95,
+
+        0 8px 22px
+        rgba(168, 85, 247, 0.25);
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.loading {
+    color:
+        rgba(255, 255, 255, 0.45);
+
+    padding: 40px;
+
+    text-align: center;
+
+    font-size: 13px;
+}
+
+/* =========================================================
+   ICONOS SVG
+========================================================= */
+
+/*
+   Estas reglas afectan SOLAMENTE a SVG.
+   No afectan a las imágenes PNG/JPG de las instancias.
+*/
+
+.sidebar-item svg,
+.window-buttons svg,
+.play-button svg,
+.play-card-icon svg,
+.instance-icon svg {
+    width: 19px;
+    height: 19px;
+
+    fill: none;
+
+    stroke: currentColor;
+
+    stroke-width: 1.8;
+
+    stroke-linecap: round;
+    stroke-linejoin: round;
+
+    color:
+        rgba(255, 255, 255, 0.58);
+
+    flex-shrink: 0;
+
+    transition:
+        color 0.2s ease,
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+/* =========================================================
+   SIDEBAR SVG ACTIVO
+========================================================= */
+
+.sidebar-item.active svg {
+    color: #a855f7;
+
+    opacity: 1;
+}
+
+/* =========================================================
+   SIDEBAR SVG HOVER
+========================================================= */
+
+.sidebar-item:hover svg {
+    color: #ffffff;
+
+    opacity: 1;
+
+    transform: scale(1.06);
+}
+
+/* =========================================================
+   BOTÓN JUGAR SVG
+========================================================= */
+
+.play-button svg {
+    color: white;
+
+    width: 18px;
+    height: 18px;
+}
+
+/* =========================================================
+   ICONO TARJETA JUGAR
+========================================================= */
+
+.play-card-icon svg {
+    width: 22px;
+    height: 22px;
+
+    color: #c084fc;
+}
+
+/* =========================================================
+   ICONOS VENTANA
+========================================================= */
+
+.window-buttons svg {
+    width: 16px;
+    height: 16px;
+
+    color:
+        rgba(255, 255, 255, 0.7);
+}
+
+/* =========================================================
+   SVG DE INSTANCIAS
+========================================================= */
+
+.instance-icon svg {
+    width: 27px;
+    height: 27px;
+
+    color:
+        rgba(255, 255, 255, 0.65);
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 850px) {
+
+    .sidebar {
+        width: 180px;
+    }
+
+    .minecraft-title {
+        font-size: 55px;
+    }
+
+    .instances-list {
+        max-width: 650px;
+    }
+}
