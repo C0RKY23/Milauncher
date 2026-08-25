@@ -7,13 +7,132 @@ const { pathToFileURL } = require('url');
 let win;
 
 /* =========================
-   RUTA DE PRISM LAUNCHER
+   DETECTAR DÓNDE VIVE PRISM LAUNCHER
+   (según sistema operativo y forma de instalación)
 ========================= */
 
+function getPrismDataDir() {
+
+    const candidates = [];
+
+    if (process.platform === 'win32') {
+
+        // Windows: instalación normal de Prism
+        candidates.push({
+            dir: path.join(process.env.APPDATA || '', 'PrismLauncher'),
+            isFlatpak: false
+        });
+
+    } else if (process.platform === 'darwin') {
+
+        // macOS: instalación normal de Prism
+        candidates.push({
+            dir: path.join(
+                process.env.HOME,
+                'Library/Application Support/PrismLauncher'
+            ),
+            isFlatpak: false
+        });
+
+    } else {
+
+        // Linux: puede estar como Flatpak o instalado "normal"
+        // (AppImage/paquete nativo). Probamos ambas rutas y
+        // usamos la que exista de verdad en esta PC.
+        candidates.push({
+            dir: path.join(
+                process.env.HOME,
+                '.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher'
+            ),
+            isFlatpak: true
+        });
+
+        candidates.push({
+            dir: path.join(
+                process.env.HOME,
+                '.local/share/PrismLauncher'
+            ),
+            isFlatpak: false
+        });
+    }
+
+    for (const candidate of candidates) {
+
+        if (fs.existsSync(candidate.dir)) {
+            return candidate;
+        }
+    }
+
+    // Si no encontramos ninguna carpeta existente, devolvemos
+    // la primera opción como intento por defecto (así el resto
+    // del código sigue funcionando y muestra "sin instancias"
+    // en vez de romperse).
+    return candidates[0];
+}
+
+const prismInfo = getPrismDataDir();
+
 const instancesPath = path.join(
-    process.env.HOME,
-    '.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/instances'
+    prismInfo.dir,
+    'instances'
 );
+
+/* =========================
+   LANZAR PRISM (según cómo esté instalado)
+========================= */
+
+function launchPrismInstance(instanceId) {
+
+    let command;
+    let args;
+
+    if (prismInfo.isFlatpak) {
+
+        command = 'flatpak';
+        args = [
+            'run',
+            'org.prismlauncher.PrismLauncher',
+            '--launch',
+            instanceId
+        ];
+
+    } else if (process.platform === 'darwin') {
+
+        command = 'open';
+        args = [
+            '-a',
+            'Prism Launcher',
+            '--args',
+            '--launch',
+            instanceId
+        ];
+
+    } else {
+
+        // Windows y Linux (instalación nativa): asumimos que
+        // el comando "prismlauncher" está disponible en el
+        // PATH del sistema (así queda tras una instalación
+        // normal en la mayoría de los casos).
+        command = 'prismlauncher';
+        args = ['--launch', instanceId];
+    }
+
+    const prism = spawn(command, args, {
+        detached: true,
+        stdio: 'ignore'
+    });
+
+    prism.on('error', (error) => {
+
+        console.error(
+            '❌ No se pudo lanzar Prism Launcher. ' +
+            '¿Está instalado y accesible?',
+            error
+        );
+    });
+
+    prism.unref();
+}
 
 /* =========================
    CONFIGURACIÓN (RAM / RESOLUCIÓN)
@@ -30,7 +149,11 @@ const settingsPath = path.join(
 const defaultSettings = {
     ram: 4096,       // en MB (4096 MB = 4 GB)
     resWidth: 1280,
-    resHeight: 720
+    resHeight: 720,
+    muted: false,
+    musicTrack: 'background-music.mp3',
+    musicVolume: 0.25,
+    sfxVolume: 0.5
 };
 
 function loadSettings() {
@@ -741,22 +864,7 @@ ipcMain.on(
             settings
         );
 
-        const prism =
-            spawn(
-                'flatpak',
-                [
-                    'run',
-                    'org.prismlauncher.PrismLauncher',
-                    '--launch',
-                    instanceId
-                ],
-                {
-                    detached: true,
-                    stdio: 'ignore'
-                }
-            );
-
-        prism.unref();
+        launchPrismInstance(instanceId);
     }
 );
 

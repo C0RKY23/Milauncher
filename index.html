@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MiLauncher</title>
+    <title>CRK Launcher</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -20,11 +20,23 @@
     <header class="topbar">
 
         <div class="logo">
-            <span class="logo-mark">M</span>
-            <span>MiLauncher</span>
+            <span>CRK Launcher</span>
         </div>
 
         <div class="window-buttons">
+
+            <button id="mute-toggle" title="Silenciar / Activar sonido">
+                <svg viewBox="0 0 24 24" id="icon-sound-on">
+                    <path d="M4 9v6h4l5 5V4L8 9H4z"/>
+                    <path d="M17 8a5 5 0 0 1 0 8"/>
+                    <path d="M19.5 5.5a9 9 0 0 1 0 13"/>
+                </svg>
+
+                <svg viewBox="0 0 24 24" id="icon-sound-off" style="display:none;">
+                    <path d="M4 9v6h4l5 5V4L8 9H4z"/>
+                    <path d="M16 9l5 6M21 9l-5 6"/>
+                </svg>
+            </button>
 
             <button id="minimize" title="Minimizar">
                 <svg viewBox="0 0 24 24">
@@ -47,6 +59,15 @@
         </div>
 
     </header>
+
+
+    <!-- =================================================
+         AUDIO (sonidos de UI y música de fondo)
+    ================================================== -->
+
+    <audio id="sound-click" src="sounds/click.mp3" preload="auto"></audio>
+    <audio id="sound-launch" src="sounds/launch.mp3" preload="auto"></audio>
+    <audio id="sound-music" preload="auto" loop></audio>
 
 
     <!-- =================================================
@@ -135,6 +156,19 @@
 
                 </div>
 
+
+                <div class="sidebar-item" data-page="credits">
+
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 16v-5"/>
+                        <path d="M12 8h.01"/>
+                    </svg>
+
+                    <span>Créditos</span>
+
+                </div>
+
             </div>
 
         </aside>
@@ -160,7 +194,7 @@
                     </div>
 
                     <div class="subtitle">
-                        Tu launcher. Tu Minecraft.
+                        Bienvenido de vuelta. Es hora de jugar.
                     </div>
 
                     <button class="play-button" id="play-button">
@@ -419,6 +453,180 @@
 
                     </div>
 
+
+                    <span class="page-eyebrow" style="display: block; margin: 26px 0 14px;">
+                        AUDIO
+                    </span>
+
+
+                    <div class="setting">
+
+                        <div>
+
+                            <span>
+                                Canción de fondo
+                            </span>
+
+                            <small>
+                                Música que se repite mientras usas el launcher
+                            </small>
+
+                        </div>
+
+                        <select id="music-select" class="settings-select">
+                            <option value="background-music.mp3">Pista 1</option>
+                            <option value="background-music-2.mp3">Pista 2</option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="setting">
+
+                        <div>
+
+                            <span>
+                                Volumen de música
+                            </span>
+
+                            <small>
+                                Qué tan fuerte suena la canción de fondo
+                            </small>
+
+                            <input
+                                type="range"
+                                id="music-volume-slider"
+                                min="0"
+                                max="100"
+                                step="1"
+                                value="25"
+                                class="settings-slider"
+                            >
+
+                        </div>
+
+                        <strong id="music-volume-value">
+                            25%
+                        </strong>
+
+                    </div>
+
+
+                    <div class="setting">
+
+                        <div>
+
+                            <span>
+                                Volumen de efectos
+                            </span>
+
+                            <small>
+                                Clics de botones y sonido al jugar
+                            </small>
+
+                            <input
+                                type="range"
+                                id="sfx-volume-slider"
+                                min="0"
+                                max="100"
+                                step="1"
+                                value="50"
+                                class="settings-slider"
+                            >
+
+                        </div>
+
+                        <strong id="sfx-volume-value">
+                            50%
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 CRÉDITOS
+            ================================================== -->
+
+            <div class="page" id="page-credits">
+
+                <div class="page-header">
+
+                    <span class="page-eyebrow">
+                        ACERCA DE
+                    </span>
+
+                    <h1>
+                        Créditos
+                    </h1>
+
+                    <p>
+                        Herramientas y proyectos detrás de CRK Launcher.
+                    </p>
+
+                </div>
+
+
+                <div class="settings-list">
+
+                    <div class="setting">
+
+                        <div>
+                            <span>Desarrollado por</span>
+                            <small>Creador del launcher</small>
+                        </div>
+
+                        <strong>Corky</strong>
+
+                    </div>
+
+                    <div class="setting">
+
+                        <div>
+                            <span>Motor de la aplicación</span>
+                            <small>Framework usado para construir la interfaz</small>
+                        </div>
+
+                        <strong>Electron</strong>
+
+                    </div>
+
+                    <div class="setting">
+
+                        <div>
+                            <span>Gestión de instancias</span>
+                            <small>Encargado de instalar y ejecutar Minecraft</small>
+                        </div>
+
+                        <strong>Prism Launcher</strong>
+
+                    </div>
+
+                    <div class="setting">
+
+                        <div>
+                            <span>Tipografías</span>
+                            <small>Plus Jakarta Sans &amp; Unbounded</small>
+                        </div>
+
+                        <strong>Google Fonts</strong>
+
+                    </div>
+
+                    <div class="setting">
+
+                        <div>
+                            <span>Íconos de skin</span>
+                            <small>Generación de caras de skin por UUID</small>
+                        </div>
+
+                        <strong>Crafatar</strong>
+
+                    </div>
+
                 </div>
 
             </div>
@@ -457,7 +665,7 @@
 
         <div class="version">
 
-            <span>MiLauncher</span>
+            <span>CRK Launcher</span>
 
             <strong>
                 1.0

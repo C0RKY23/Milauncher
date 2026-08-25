@@ -1,4 +1,111 @@
 /* =========================================================
+   SONIDO (clics, hover, lanzar, música de fondo)
+========================================================= */
+
+const soundClick = document.getElementById('sound-click');
+const soundLaunch = document.getElementById('sound-launch');
+const soundMusic = document.getElementById('sound-music');
+
+soundClick.volume = 0.5;
+soundLaunch.volume = 0.6;
+soundMusic.volume = 0.25;
+
+let isMuted = false;
+
+// Reproduce un sonido desde el inicio, incluso si ya estaba
+// sonando (usa un clon para permitir clics rápidos seguidos).
+function playSound(audioElement) {
+
+    if (isMuted) {
+        return;
+    }
+
+    const clone = audioElement.cloneNode();
+    clone.volume = audioElement.volume;
+    clone.play().catch(() => {});
+}
+
+function applyMuteState() {
+
+    soundMusic.muted = isMuted;
+
+    document.getElementById('icon-sound-on').style.display =
+        isMuted ? 'none' : 'block';
+
+    document.getElementById('icon-sound-off').style.display =
+        isMuted ? 'block' : 'none';
+}
+
+
+// Sonido de clic para casi cualquier botón o tarjeta clickeable,
+// EXCEPTO el botón de Jugar (ese usa su propio sonido especial).
+document.addEventListener('click', event => {
+
+    const target = event.target.closest(
+        'button, .sidebar-item, .instance-card'
+    );
+
+    if (!target) {
+        return;
+    }
+
+    if (target.classList.contains('play-button')) {
+        return; // este ya suena distinto, ver más abajo
+    }
+
+    playSound(soundClick);
+
+});
+
+
+// Botón de silenciar / activar sonido
+document
+    .getElementById('mute-toggle')
+    .addEventListener('click', () => {
+
+        isMuted = !isMuted;
+
+        applyMuteState();
+
+        // Guardamos la preferencia junto con el resto de
+        // la configuración (RAM, resolución) que ya existía.
+        currentSettings.muted = isMuted;
+
+        window.electronAPI.saveSettings(currentSettings);
+
+    });
+
+
+// Intentamos iniciar la música apenas carga el launcher.
+// Si el navegador la bloquea (política de autoplay), la
+// arrancamos en cuanto el usuario haga el primer clic.
+function tryPlayMusic() {
+
+    if (isMuted) {
+        return;
+    }
+
+    soundMusic.play().catch(() => {
+
+        const startOnFirstClick = () => {
+
+            soundMusic.play().catch(() => {});
+
+            document.removeEventListener(
+                'click',
+                startOnFirstClick
+            );
+        };
+
+        document.addEventListener(
+            'click',
+            startOnFirstClick
+        );
+    });
+}
+
+
+/* =========================================================
    BOTONES DE VENTANA
 ========================================================= */
 
@@ -201,6 +308,8 @@ document
     .getElementById('play-button')
     .addEventListener('click', () => {
 
+        playSound(soundLaunch);
+
         console.log(
             '🚀 Lanzando:',
             selectedInstance
@@ -221,6 +330,8 @@ document
 document
     .getElementById('play-instance')
     .addEventListener('click', () => {
+
+        playSound(soundLaunch);
 
         console.log(
             '🚀 Lanzando:',
@@ -444,6 +555,8 @@ async function loadInstances() {
 
                     event.stopPropagation();
 
+                    playSound(soundClick);
+
 
                     updateSelectedInstance(
                         instance.name,
@@ -598,10 +711,42 @@ const resolutionSelect =
     document.getElementById('resolution-select');
 
 
+// Guardamos aquí la última configuración conocida, para no
+// pisar el campo "muted" cuando se guarda RAM/resolución
+// (y viceversa).
+let currentSettings = {
+    ram: 4096,
+    resWidth: 1280,
+    resHeight: 720,
+    muted: false,
+    musicTrack: 'background-music.mp3',
+    musicVolume: 0.25,
+    sfxVolume: 0.5
+};
+
+
+const musicSelect =
+    document.getElementById('music-select');
+
+const musicVolumeSlider =
+    document.getElementById('music-volume-slider');
+
+const musicVolumeValue =
+    document.getElementById('music-volume-value');
+
+const sfxVolumeSlider =
+    document.getElementById('sfx-volume-slider');
+
+const sfxVolumeValue =
+    document.getElementById('sfx-volume-value');
+
+
 async function loadSettings() {
 
     const settings =
         await window.electronAPI.getSettings();
+
+    currentSettings = settings;
 
     // settings.ram viene en MB, el slider trabaja en GB
     const ramGB =
@@ -617,6 +762,36 @@ async function loadSettings() {
 
     resolutionSelect.value = resValue;
 
+
+    // Pista y volúmenes
+    musicSelect.value = settings.musicTrack;
+
+    soundMusic.src = `sounds/${settings.musicTrack}`;
+
+    soundMusic.volume = settings.musicVolume;
+
+    musicVolumeSlider.value = Math.round(settings.musicVolume * 100);
+
+    musicVolumeValue.textContent =
+        `${Math.round(settings.musicVolume * 100)}%`;
+
+
+    soundClick.volume = settings.sfxVolume;
+
+    soundLaunch.volume = settings.sfxVolume;
+
+    sfxVolumeSlider.value = Math.round(settings.sfxVolume * 100);
+
+    sfxVolumeValue.textContent =
+        `${Math.round(settings.sfxVolume * 100)}%`;
+
+
+    // Aplicar el estado de silencio guardado
+    isMuted = !!settings.muted;
+
+    applyMuteState();
+    tryPlayMusic();
+
 }
 
 
@@ -630,15 +805,81 @@ function saveCurrentSettings() {
             .split('x')
             .map(Number);
 
-    const settings = {
+    currentSettings = {
+        ...currentSettings,
         ram: ramGB * 1024, // GB -> MB
         resWidth,
         resHeight
     };
 
-    window.electronAPI.saveSettings(settings);
+    window.electronAPI.saveSettings(currentSettings);
 
 }
+
+
+/* =========================================================
+   PISTA Y VOLÚMENES
+========================================================= */
+
+musicSelect.addEventListener('change', () => {
+
+    currentSettings.musicTrack = musicSelect.value;
+
+    soundMusic.src = `sounds/${musicSelect.value}`;
+
+    if (!isMuted) {
+        soundMusic.play().catch(() => {});
+    }
+
+    window.electronAPI.saveSettings(currentSettings);
+
+});
+
+
+// Mientras arrastras, solo se mueve el número en pantalla
+// (barato de hacer). El volumen REAL del audio que está
+// sonando se aplica hasta que SUELTAS el slider, para no
+// saturarlo con cambios constantes mientras se reproduce.
+musicVolumeSlider.addEventListener('input', () => {
+
+    musicVolumeValue.textContent =
+        `${musicVolumeSlider.value}%`;
+
+});
+
+musicVolumeSlider.addEventListener('change', () => {
+
+    const volume = Number(musicVolumeSlider.value) / 100;
+
+    soundMusic.volume = volume;
+
+    currentSettings.musicVolume = volume;
+
+    window.electronAPI.saveSettings(currentSettings);
+
+});
+
+
+sfxVolumeSlider.addEventListener('input', () => {
+
+    const volume = Number(sfxVolumeSlider.value) / 100;
+
+    soundClick.volume = volume;
+    soundLaunch.volume = volume;
+
+    sfxVolumeValue.textContent =
+        `${sfxVolumeSlider.value}%`;
+
+});
+
+sfxVolumeSlider.addEventListener('change', () => {
+
+    currentSettings.sfxVolume =
+        Number(sfxVolumeSlider.value) / 100;
+
+    window.electronAPI.saveSettings(currentSettings);
+
+});
 
 
 // Mientras arrastras el slider, solo actualiza el número en pantalla
