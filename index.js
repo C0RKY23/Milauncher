@@ -140,6 +140,149 @@ function applySettingsToInstance(instanceId, settings) {
     );
 }
 
+function getAccountsPath() {
+
+    return path.join(
+        instancesPath,
+        '..',
+        'accounts.json'
+    );
+}
+
+// Crafatar genera la imagen de la cabeza de la skin real
+// a partir del UUID de la cuenta (si no tiene skin real,
+// muestra la cabeza de Steve por defecto, igual que el juego).
+function getFaceUrl(profileId) {
+
+    return `https://crafatar.com/avatars/${profileId}?size=64&overlay`;
+}
+
+function getAllAccounts() {
+
+    try {
+
+        const accountsPath = getAccountsPath();
+
+        if (!fs.existsSync(accountsPath)) {
+            return [];
+        }
+
+        const data = JSON.parse(
+            fs.readFileSync(accountsPath, 'utf8')
+        );
+
+        const accounts = data.accounts || [];
+
+        return accounts
+            .filter(a => a.profile?.id)
+            .map(a => ({
+                id: a.profile.id,
+                name: a.profile.name || 'Sin nombre',
+                type: a.type === 'MSA'
+                    ? 'Cuenta Microsoft'
+                    : 'Cuenta sin conexión',
+                active: !!a.active,
+                faceUrl: getFaceUrl(a.profile.id)
+            }));
+
+    } catch (error) {
+
+        console.error(
+            'Error leyendo cuentas:',
+            error
+        );
+
+        return [];
+    }
+}
+
+function setActiveAccount(profileId) {
+
+    try {
+
+        const accountsPath = getAccountsPath();
+
+        const data = JSON.parse(
+            fs.readFileSync(accountsPath, 'utf8')
+        );
+
+        for (const account of data.accounts || []) {
+
+            account.active =
+                account.profile?.id === profileId;
+        }
+
+        fs.writeFileSync(
+            accountsPath,
+            JSON.stringify(data, null, 2),
+            'utf8'
+        );
+
+        console.log(
+            '✅ Cuenta activa cambiada a:',
+            profileId
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Error cambiando cuenta activa:',
+            error
+        );
+    }
+}
+
+/* =========================
+   LEER CUENTA DE PRISM
+========================= */
+
+function getPrismAccount() {
+
+    try {
+
+        // accounts.json vive junto a la carpeta "instances"
+        const accountsPath = getAccountsPath();
+
+        if (!fs.existsSync(accountsPath)) {
+            return null;
+        }
+
+        const data = JSON.parse(
+            fs.readFileSync(accountsPath, 'utf8')
+        );
+
+        const accounts = data.accounts || [];
+
+        // Tomamos la cuenta marcada como "active", o si no
+        // hay ninguna marcada, la primera de la lista.
+        const account =
+            accounts.find(a => a.active) || accounts[0];
+
+        if (!account) {
+            return null;
+        }
+
+        return {
+            name: account.profile?.name || 'Sin nombre',
+            type: account.type === 'MSA'
+                ? 'Cuenta Microsoft'
+                : 'Cuenta sin conexión',
+            faceUrl: account.profile?.id
+                ? getFaceUrl(account.profile.id)
+                : null
+        };
+
+    } catch (error) {
+
+        console.error(
+            'Error leyendo accounts.json:',
+            error
+        );
+
+        return null;
+    }
+}
+
 /* =========================
    CREAR VENTANA
 ========================= */
@@ -555,6 +698,25 @@ ipcMain.on('save-settings', (event, settings) => {
     console.log('💾 Guardando configuración:', settings);
 
     saveSettingsToDisk(settings);
+});
+
+/* =========================
+   OBTENER CUENTA
+========================= */
+
+ipcMain.handle('get-account', () => {
+
+    return getPrismAccount();
+});
+
+ipcMain.handle('get-accounts', () => {
+
+    return getAllAccounts();
+});
+
+ipcMain.on('set-active-account', (event, profileId) => {
+
+    setActiveAccount(profileId);
 });
 
 /* =========================

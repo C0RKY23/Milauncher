@@ -1219,3 +1219,23 @@ body {
     background: #14121a;
     color: var(--text);
 }
+
+/* =========================================================
+   CARA DE SKIN (avatar real)
+========================================================= */
+
+.avatar img,
+.big-avatar img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    border-radius: inherit;
+
+    image-rendering: pixelated;
+}
+
+.instance-icon img.face-icon {
+    image-rendering: pixelated;
+}

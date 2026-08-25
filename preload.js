@@ -76,6 +76,28 @@ contextBridge.exposeInMainWorld(
                 ipcRenderer.send(
                     'save-settings',
                     settings
+                ),
+
+
+        getAccount:
+            () =>
+                ipcRenderer.invoke(
+                    'get-account'
+                ),
+
+
+        getAccounts:
+            () =>
+                ipcRenderer.invoke(
+                    'get-accounts'
+                ),
+
+
+        setActiveAccount:
+            (profileId) =>
+                ipcRenderer.send(
+                    'set-active-account',
+                    profileId
                 )
 
     }

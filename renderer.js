@@ -667,8 +667,206 @@ resolutionSelect.addEventListener('change', () => {
 
 
 /* =========================================================
+   CUENTA (leída de Prism)
+========================================================= */
+
+async function loadAccount() {
+
+    const account =
+        await window.electronAPI.getAccount();
+
+    const displayName =
+        account ? account.name : 'Sin cuenta';
+
+    const displayType =
+        account ? account.type : 'No se encontró ninguna cuenta en Prism';
+
+    const firstLetter =
+        displayName.charAt(0).toUpperCase();
+
+
+    // Página de Cuenta
+    document.getElementById('account-name').textContent =
+        displayName;
+
+    document.getElementById('account-type').textContent =
+        displayType;
+
+    setFaceImage(
+        document.getElementById('account-avatar'),
+        account?.faceUrl,
+        firstLetter
+    );
+
+
+    // Barra inferior
+    document.getElementById('footer-account-name').textContent =
+        displayName;
+
+    document.getElementById('footer-account-type').textContent =
+        displayType;
+
+    setFaceImage(
+        document.getElementById('footer-avatar'),
+        account?.faceUrl,
+        firstLetter
+    );
+
+}
+
+
+// Pone una imagen de cara dentro de un contenedor (avatar).
+// Si la imagen falla en cargar (sin internet, etc), deja
+// la letra de respaldo que ya tenía el contenedor.
+function setFaceImage(container, faceUrl, fallbackLetter) {
+
+    if (!container) {
+        return;
+    }
+
+    if (!faceUrl) {
+
+        container.innerHTML =
+            `<span>${fallbackLetter}</span>`;
+
+        return;
+    }
+
+    const img =
+        document.createElement('img');
+
+    img.src = faceUrl;
+    img.alt = 'Skin';
+    img.draggable = false;
+
+    img.addEventListener('error', () => {
+
+        container.innerHTML =
+            `<span>${fallbackLetter}</span>`;
+
+    });
+
+    container.innerHTML = '';
+    container.appendChild(img);
+
+}
+
+
+/* =========================================================
+   LISTA DE CUENTAS (cambiar entre cuentas de Prism)
+========================================================= */
+
+const accountsList =
+    document.getElementById('accounts-list');
+
+
+async function loadAccountsList() {
+
+    const accounts =
+        await window.electronAPI.getAccounts();
+
+    accountsList.innerHTML = '';
+
+    if (!accounts || accounts.length === 0) {
+
+        accountsList.innerHTML = `
+            <div class="loading">
+                No se encontraron cuentas en Prism.
+            </div>
+        `;
+
+        return;
+    }
+
+    accounts.forEach(account => {
+
+        const card =
+            document.createElement('div');
+
+        card.className =
+            'instance-card' +
+            (account.active ? ' selected' : '');
+
+
+        const iconContainer =
+            document.createElement('div');
+
+        iconContainer.className =
+            'instance-icon';
+
+        setFaceImage(
+            iconContainer,
+            account.faceUrl,
+            account.name.charAt(0).toUpperCase()
+        );
+
+
+        const info =
+            document.createElement('div');
+
+        info.className = 'instance-info';
+
+        const name =
+            document.createElement('strong');
+
+        name.textContent = account.name;
+
+        const type =
+            document.createElement('span');
+
+        type.textContent = account.active
+            ? `${account.type} • Activa`
+            : account.type;
+
+        info.appendChild(name);
+        info.appendChild(type);
+
+
+        const button =
+            document.createElement('button');
+
+        button.className =
+            'play-button small';
+
+        button.type = 'button';
+        button.disabled = account.active;
+
+        const buttonText =
+            document.createElement('span');
+
+        buttonText.textContent =
+            account.active ? 'ACTIVA' : 'USAR ESTA';
+
+        button.appendChild(buttonText);
+
+        button.addEventListener('click', async () => {
+
+            await window.electronAPI.setActiveAccount(
+                account.id
+            );
+
+            loadAccountsList();
+            loadAccount();
+
+        });
+
+
+        card.appendChild(iconContainer);
+        card.appendChild(info);
+        card.appendChild(button);
+
+        accountsList.appendChild(card);
+
+    });
+
+}
+
+
+/* =========================================================
    INICIAR
 ========================================================= */
 
 loadInstances();
 loadSettings();
+loadAccount();
+loadAccountsList();
