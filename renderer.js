@@ -1,5 +1,88 @@
 /* =========================================================
-   SONIDO (clics, hover, lanzar, música de fondo)
+   AVISOS (TOASTS)
+========================================================= */
+
+const toastContainer =
+    document.getElementById('toast-container');
+
+function showToast(message) {
+
+    const toast =
+        document.createElement('div');
+
+    toast.className = 'toast';
+
+    const icon = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'svg'
+    );
+
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('class', 'toast-icon');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '2');
+
+    const circle = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'circle'
+    );
+
+    circle.setAttribute('cx', '12');
+    circle.setAttribute('cy', '12');
+    circle.setAttribute('r', '9');
+
+    const line1 = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'path'
+    );
+
+    line1.setAttribute('d', 'M12 8v5');
+
+    const line2 = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'path'
+    );
+
+    line2.setAttribute('d', 'M12 16h.01');
+
+    icon.appendChild(circle);
+    icon.appendChild(line1);
+    icon.appendChild(line2);
+
+
+    const text = document.createElement('span');
+    text.textContent = message;
+
+
+    toast.appendChild(icon);
+    toast.appendChild(text);
+
+    toastContainer.appendChild(toast);
+
+    // Se quita solo después de unos segundos
+    setTimeout(() => {
+
+        toast.classList.add('hide');
+
+        setTimeout(() => toast.remove(), 250);
+
+    }, 5000);
+
+}
+
+
+// Cuando el proceso principal avisa que algo falló al
+// intentar lanzar el juego, se lo mostramos al usuario.
+window.electronAPI.onLaunchError(message => {
+
+    showToast(message);
+
+});
+
+
+/* =========================================================
+   SONIDO (clics, lanzar, música de fondo)
 ========================================================= */
 
 const soundClick = document.getElementById('sound-click');
@@ -379,11 +462,25 @@ async function loadInstances() {
             instances.length === 0
         ) {
 
-            instancesList.innerHTML = `
-                <div class="loading">
-                    No se encontraron instalaciones.
-                </div>
-            `;
+            const prismInstalled =
+                await window.electronAPI.isPrismInstalled();
+
+            const launcherName =
+                await window.electronAPI.getDetectedLauncherName();
+
+            instancesList.innerHTML = prismInstalled
+                ? `
+                    <div class="loading">
+                        No se encontraron instalaciones.
+                        Crea una instancia en ${launcherName} primero.
+                    </div>
+                `
+                : `
+                    <div class="loading">
+                        No se detectó Prism Launcher ni PolyMC
+                        instalados en este sistema.
+                    </div>
+                `;
 
             return;
 
@@ -1010,11 +1107,25 @@ async function loadAccountsList() {
 
     if (!accounts || accounts.length === 0) {
 
-        accountsList.innerHTML = `
-            <div class="loading">
-                No se encontraron cuentas en Prism.
-            </div>
-        `;
+        const prismInstalled =
+            await window.electronAPI.isPrismInstalled();
+
+        const launcherName =
+            await window.electronAPI.getDetectedLauncherName();
+
+        accountsList.innerHTML = prismInstalled
+            ? `
+                <div class="loading">
+                    No se encontraron cuentas. Inicia sesión
+                    en ${launcherName} primero.
+                </div>
+            `
+            : `
+                <div class="loading">
+                    No se detectó Prism Launcher ni PolyMC
+                    instalados en este sistema.
+                </div>
+            `;
 
         return;
     }

@@ -7,8 +7,8 @@ const { pathToFileURL } = require('url');
 let win;
 
 /* =========================
-   DETECTAR DÓNDE VIVE PRISM LAUNCHER
-   (según sistema operativo y forma de instalación)
+   DETECTAR QUÉ LAUNCHER DE MINECRAFT HAY INSTALADO
+   (Prism Launcher o PolyMC, según sistema operativo)
 ========================= */
 
 function getPrismDataDir() {
@@ -17,42 +17,86 @@ function getPrismDataDir() {
 
     if (process.platform === 'win32') {
 
-        // Windows: instalación normal de Prism
         candidates.push({
+            name: 'Prism Launcher',
             dir: path.join(process.env.APPDATA || '', 'PrismLauncher'),
-            isFlatpak: false
+            isFlatpak: false,
+            nativeCommand: 'prismlauncher'
+        });
+
+        candidates.push({
+            name: 'PolyMC',
+            dir: path.join(process.env.APPDATA || '', 'PolyMC'),
+            isFlatpak: false,
+            nativeCommand: 'polymc'
         });
 
     } else if (process.platform === 'darwin') {
 
-        // macOS: instalación normal de Prism
         candidates.push({
+            name: 'Prism Launcher',
             dir: path.join(
                 process.env.HOME,
                 'Library/Application Support/PrismLauncher'
             ),
-            isFlatpak: false
+            isFlatpak: false,
+            nativeCommand: 'prismlauncher'
+        });
+
+        candidates.push({
+            name: 'PolyMC',
+            dir: path.join(
+                process.env.HOME,
+                'Library/Application Support/PolyMC'
+            ),
+            isFlatpak: false,
+            nativeCommand: 'polymc'
         });
 
     } else {
 
-        // Linux: puede estar como Flatpak o instalado "normal"
-        // (AppImage/paquete nativo). Probamos ambas rutas y
-        // usamos la que exista de verdad en esta PC.
+        // Linux: probamos Prism (Flatpak y nativo) y
+        // PolyMC (Flatpak y nativo), en ese orden de
+        // preferencia, y usamos el primero que exista
+        // de verdad en esta PC.
         candidates.push({
+            name: 'Prism Launcher',
             dir: path.join(
                 process.env.HOME,
                 '.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher'
             ),
-            isFlatpak: true
+            isFlatpak: true,
+            flatpakId: 'org.prismlauncher.PrismLauncher'
         });
 
         candidates.push({
+            name: 'Prism Launcher',
             dir: path.join(
                 process.env.HOME,
                 '.local/share/PrismLauncher'
             ),
-            isFlatpak: false
+            isFlatpak: false,
+            nativeCommand: 'prismlauncher'
+        });
+
+        candidates.push({
+            name: 'PolyMC',
+            dir: path.join(
+                process.env.HOME,
+                '.var/app/org.polymc.PolyMC/data/PolyMC'
+            ),
+            isFlatpak: true,
+            flatpakId: 'org.polymc.PolyMC'
+        });
+
+        candidates.push({
+            name: 'PolyMC',
+            dir: path.join(
+                process.env.HOME,
+                '.local/share/PolyMC'
+            ),
+            isFlatpak: false,
+            nativeCommand: 'polymc'
         });
     }
 
@@ -91,7 +135,7 @@ function launchPrismInstance(instanceId) {
         command = 'flatpak';
         args = [
             'run',
-            'org.prismlauncher.PrismLauncher',
+            prismInfo.flatpakId,
             '--launch',
             instanceId
         ];
@@ -101,7 +145,7 @@ function launchPrismInstance(instanceId) {
         command = 'open';
         args = [
             '-a',
-            'Prism Launcher',
+            prismInfo.name,
             '--args',
             '--launch',
             instanceId
@@ -110,10 +154,10 @@ function launchPrismInstance(instanceId) {
     } else {
 
         // Windows y Linux (instalación nativa): asumimos que
-        // el comando "prismlauncher" está disponible en el
-        // PATH del sistema (así queda tras una instalación
-        // normal en la mayoría de los casos).
-        command = 'prismlauncher';
+        // el comando está disponible en el PATH del sistema
+        // (así queda tras una instalación normal en la
+        // mayoría de los casos).
+        command = prismInfo.nativeCommand;
         args = ['--launch', instanceId];
     }
 
@@ -125,10 +169,19 @@ function launchPrismInstance(instanceId) {
     prism.on('error', (error) => {
 
         console.error(
-            '❌ No se pudo lanzar Prism Launcher. ' +
+            `❌ No se pudo lanzar ${prismInfo.name}. ` +
             '¿Está instalado y accesible?',
             error
         );
+
+        if (win && !win.isDestroyed()) {
+
+            win.webContents.send(
+                'launch-error',
+                `No se pudo lanzar ${prismInfo.name}. ` +
+                'Revisa que esté instalado correctamente.'
+            );
+        }
     });
 
     prism.unref();
@@ -555,6 +608,20 @@ function findIcon(instancePath) {
 }
 
 /* =========================
+   ¿ESTÁ ALGÚN LAUNCHER INSTALADO?
+========================= */
+
+ipcMain.handle('is-prism-installed', () => {
+
+    return fs.existsSync(prismInfo.dir);
+});
+
+ipcMain.handle('get-detected-launcher-name', () => {
+
+    return prismInfo.name;
+});
+
+/* =========================
    OBTENER INSTANCIAS
 ========================= */
 
@@ -855,16 +922,35 @@ ipcMain.on(
             instanceId
         );
 
-        // Aplicamos la RAM y resolución guardadas en
-        // Configuración justo antes de lanzar el juego.
-        const settings = loadSettings();
+        try {
 
-        applySettingsToInstance(
-            instanceId,
-            settings
-        );
+            // Aplicamos la RAM y resolución guardadas en
+            // Configuración justo antes de lanzar el juego.
+            const settings = loadSettings();
 
-        launchPrismInstance(instanceId);
+            applySettingsToInstance(
+                instanceId,
+                settings
+            );
+
+            launchPrismInstance(instanceId);
+
+        } catch (error) {
+
+            console.error(
+                'Error al preparar el lanzamiento:',
+                error
+            );
+
+            if (win && !win.isDestroyed()) {
+
+                win.webContents.send(
+                    'launch-error',
+                    'Ocurrió un problema al preparar la ' +
+                    'instancia para jugar.'
+                );
+            }
+        }
     }
 );
 

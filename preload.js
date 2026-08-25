@@ -98,6 +98,28 @@ contextBridge.exposeInMainWorld(
                 ipcRenderer.send(
                     'set-active-account',
                     profileId
+                ),
+
+
+        isPrismInstalled:
+            () =>
+                ipcRenderer.invoke(
+                    'is-prism-installed'
+                ),
+
+
+        getDetectedLauncherName:
+            () =>
+                ipcRenderer.invoke(
+                    'get-detected-launcher-name'
+                ),
+
+
+        onLaunchError:
+            (callback) =>
+                ipcRenderer.on(
+                    'launch-error',
+                    (event, message) => callback(message)
                 )
 
     }
