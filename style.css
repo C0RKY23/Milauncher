@@ -131,6 +131,20 @@ body {
 }
 
 /* =========================================================
+   FOCO (navegación con teclado / accesibilidad)
+========================================================= */
+
+button:focus-visible,
+.sidebar-item:focus-visible,
+.instance-card:focus-visible,
+select:focus-visible,
+input:focus-visible {
+
+    outline: 2px solid var(--purple-light);
+    outline-offset: 2px;
+}
+
+/* =========================================================
    LAUNCHER
 ========================================================= */
 
@@ -644,6 +658,24 @@ body {
         0 5px 0 #4c1d95,
         0 8px 22px
         rgba(168, 85, 247, 0.22);
+}
+
+.play-button:disabled {
+    cursor: default;
+
+    opacity: 0.5;
+
+    filter: grayscale(0.4);
+
+    box-shadow: none;
+
+    transform: none;
+}
+
+.play-button:disabled:hover,
+.play-button:disabled:active {
+    transform: none;
+    box-shadow: none;
 }
 
 /* =========================================================
