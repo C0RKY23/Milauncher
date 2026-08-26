@@ -123,6 +123,17 @@
 
                 </div>
 
+
+                <div class="sidebar-item" data-page="mods">
+
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2l3 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9L9 7z"/>
+                    </svg>
+
+                    <span>Mods</span>
+
+                </div>
+
             </div>
 
 
@@ -312,6 +323,15 @@
                         Selecciona la instalación que quieras jugar.
                     </p>
 
+                    <button
+                        id="open-create-instance"
+                        class="play-button small"
+                        type="button"
+                        style="margin-top: 14px; margin-bottom: 28px;"
+                    >
+                        <span>+ CREAR INSTANCIA</span>
+                    </button>
+
                 </div>
 
 
@@ -319,6 +339,139 @@
 
                     <div class="loading">
                         Cargando instalaciones...
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 MODS (buscar/instalar desde Modrinth)
+            ================================================== -->
+
+            <div class="page" id="page-mods">
+
+                <div class="page-header">
+
+                    <span class="page-eyebrow">
+                        MODRINTH
+                    </span>
+
+                    <h1>
+                        Mods
+                    </h1>
+
+                    <p>
+                        Busca mods e instálalos en una instancia
+                        con Fabric.
+                    </p>
+
+                </div>
+
+
+                <div class="mods-controls">
+
+                    <select id="mods-instance-select">
+                        <option value="">
+                            Elige una instancia...
+                        </option>
+                    </select>
+
+                    <input
+                        type="text"
+                        id="mods-search-input"
+                        placeholder="Buscar mods (ej. Sodium, JEI)..."
+                    >
+
+                    <button
+                        id="mods-search-button"
+                        class="play-button small"
+                        type="button"
+                    >
+                        <span>BUSCAR</span>
+                    </button>
+
+                </div>
+
+
+                <div id="mods-results" class="instances-list">
+
+                    <div class="loading">
+                        Busca un mod para empezar.
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 MODAL: CREAR INSTANCIA
+            ================================================== -->
+
+            <div id="create-instance-modal" class="modal-overlay hidden">
+
+                <div class="modal">
+
+                    <h2>Nueva instancia</h2>
+
+                    <p class="modal-hint">
+                        Se creará vacía; Minecraft se descarga
+                        solo la primera vez que la abras.
+                    </p>
+
+                    <label class="modal-label">
+                        Nombre
+
+                        <input
+                            type="text"
+                            id="new-instance-name"
+                            placeholder="Mi mundo nuevo"
+                            maxlength="40"
+                        >
+                    </label>
+
+                    <label class="modal-label">
+                        Versión de Minecraft
+
+                        <select id="new-instance-version">
+                            <option value="">
+                                Cargando versiones...
+                            </option>
+                        </select>
+                    </label>
+
+                    <label class="modal-label">
+                        Mod loader
+
+                        <select id="new-instance-loader">
+                            <option value="vanilla">Vanilla (sin mods)</option>
+                            <option value="fabric">Fabric</option>
+                            <option value="forge">
+                                Forge (Minecraft 1.13+)
+                            </option>
+                        </select>
+                    </label>
+
+                    <div class="modal-actions">
+
+                        <button
+                            id="cancel-create-instance"
+                            class="modal-button-secondary"
+                            type="button"
+                        >
+                            Cancelar
+                        </button>
+
+                        <button
+                            id="confirm-create-instance"
+                            class="play-button small"
+                            type="button"
+                        >
+                            <span>CREAR</span>
+                        </button>
+
                     </div>
 
                 </div>

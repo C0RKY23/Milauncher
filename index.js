@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { spawn } = require('child_process');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -908,6 +909,656 @@ ipcMain.on('set-active-account', (event, profileId) => {
 
     setActiveAccount(profileId);
 });
+
+/* =========================
+   LISTA DE VERSIONES DE MINECRAFT
+   (directo de la API pública de Mojang)
+========================= */
+
+function fetchMinecraftVersions() {
+
+    return new Promise((resolve, reject) => {
+
+        https.get(
+            'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json',
+            (response) => {
+
+                let data = '';
+
+                response.on('data', chunk => {
+                    data += chunk;
+                });
+
+                response.on('end', () => {
+
+                    try {
+
+                        const parsed = JSON.parse(data);
+
+                        // Por ahora solo versiones "release"
+                        // (sin snapshots/betas), para mantenerlo
+                        // simple y confiable.
+                        const versions = parsed.versions
+                            .filter(v => v.type === 'release')
+                            .map(v => v.id);
+
+                        resolve(versions);
+
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+        ).on('error', reject);
+    });
+}
+
+ipcMain.handle('get-minecraft-versions', async () => {
+
+    try {
+
+        return await fetchMinecraftVersions();
+
+    } catch (error) {
+
+        console.error(
+            'Error obteniendo versiones de Minecraft:',
+            error
+        );
+
+        return [];
+    }
+});
+
+/* =========================
+   INFO DE MOD LOADER DE UNA INSTANCIA
+   (para saber qué mods son compatibles)
+========================= */
+
+function getInstanceModInfo(instanceId) {
+
+    const packPath = path.join(
+        instancesPath,
+        instanceId,
+        'mmc-pack.json'
+    );
+
+    const info = {
+        minecraftVersion: null,
+        loader: null // 'fabric' | 'forge' | 'quilt' | null
+    };
+
+    if (!fs.existsSync(packPath)) {
+        return info;
+    }
+
+    try {
+
+        const pack = JSON.parse(
+            fs.readFileSync(packPath, 'utf8')
+        );
+
+        for (const component of pack.components || []) {
+
+            if (component.uid === 'net.minecraft') {
+                info.minecraftVersion = component.version;
+            }
+
+            if (component.uid === 'net.fabricmc.fabric-loader') {
+                info.loader = 'fabric';
+            }
+
+            if (component.uid === 'net.minecraftforge') {
+                info.loader = 'forge';
+            }
+
+            if (component.uid === 'org.quiltmc.quilt-loader') {
+                info.loader = 'quilt';
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            'Error leyendo mmc-pack.json de la instancia:',
+            error
+        );
+    }
+
+    return info;
+}
+
+/* =========================
+   DESCARGAR UN ARCHIVO
+   (usado para bajar el .jar del mod)
+========================= */
+
+function downloadFile(url, destPath, redirectsLeft = 3) {
+
+    return new Promise((resolve, reject) => {
+
+        https.get(url, (response) => {
+
+            // Modrinth a veces redirige a su CDN
+            if (
+                response.statusCode >= 300 &&
+                response.statusCode < 400 &&
+                response.headers.location &&
+                redirectsLeft > 0
+            ) {
+
+                downloadFile(
+                    response.headers.location,
+                    destPath,
+                    redirectsLeft - 1
+                ).then(resolve).catch(reject);
+
+                return;
+            }
+
+            if (response.statusCode !== 200) {
+
+                reject(
+                    new Error(
+                        `Descarga falló (código ${response.statusCode})`
+                    )
+                );
+
+                return;
+            }
+
+            const fileStream = fs.createWriteStream(destPath);
+
+            response.pipe(fileStream);
+
+            fileStream.on('finish', () => {
+                fileStream.close(resolve);
+            });
+
+            fileStream.on('error', reject);
+
+        }).on('error', reject);
+    });
+}
+
+/* =========================
+   BUSCAR MODS EN MODRINTH
+========================= */
+
+function httpsGetJson(url) {
+
+    return new Promise((resolve, reject) => {
+
+        https.get(
+            url,
+            { headers: { 'User-Agent': 'CRK-Launcher/1.0' } },
+            (response) => {
+
+                let data = '';
+
+                response.on('data', chunk => {
+                    data += chunk;
+                });
+
+                response.on('end', () => {
+
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+        ).on('error', reject);
+    });
+}
+
+ipcMain.handle('search-mods', async (event, query) => {
+
+    try {
+
+        const url =
+            'https://api.modrinth.com/v2/search' +
+            `?query=${encodeURIComponent(query)}` +
+            '&facets=[["project_type:mod"]]' +
+            '&limit=20';
+
+        const data = await httpsGetJson(url);
+
+        return (data.hits || []).map(hit => ({
+            id: hit.project_id,
+            title: hit.title,
+            description: hit.description,
+            iconUrl: hit.icon_url,
+            downloads: hit.downloads
+        }));
+
+    } catch (error) {
+
+        console.error('Error buscando mods:', error);
+        return [];
+    }
+});
+
+/* =========================
+   INSTALAR UN MOD EN UNA INSTANCIA
+========================= */
+
+ipcMain.handle(
+    'install-mod',
+    async (event, { instanceId, projectId }) => {
+
+        try {
+
+            const { minecraftVersion, loader } =
+                getInstanceModInfo(instanceId);
+
+            if (!loader) {
+
+                return {
+                    success: false,
+                    error:
+                        'Esta instancia no tiene un mod loader ' +
+                        '(como Fabric) instalado.'
+                };
+            }
+
+            const versionsUrl =
+                `https://api.modrinth.com/v2/project/${projectId}/version` +
+                `?loaders=["${loader}"]` +
+                `&game_versions=["${minecraftVersion}"]`;
+
+            const versions = await httpsGetJson(versionsUrl);
+
+            if (!versions || versions.length === 0) {
+
+                return {
+                    success: false,
+                    error:
+                        'No hay una versión de este mod ' +
+                        `compatible con ${loader} ` +
+                        `${minecraftVersion}.`
+                };
+            }
+
+            const chosenVersion = versions[0];
+
+            const file =
+                chosenVersion.files.find(f => f.primary) ||
+                chosenVersion.files[0];
+
+            if (!file) {
+
+                return {
+                    success: false,
+                    error: 'Este mod no tiene archivos descargables.'
+                };
+            }
+
+            const modsDir = path.join(
+                instancesPath,
+                instanceId,
+                '.minecraft',
+                'mods'
+            );
+
+            fs.mkdirSync(modsDir, { recursive: true });
+
+            const destPath = path.join(
+                modsDir,
+                file.filename
+            );
+
+            await downloadFile(file.url, destPath);
+
+            console.log(
+                '✅ Mod instalado:',
+                file.filename,
+                'en',
+                instanceId
+            );
+
+            return {
+                success: true,
+                fileName: file.filename
+            };
+
+        } catch (error) {
+
+            console.error('Error instalando mod:', error);
+
+            return {
+                success: false,
+                error: 'Ocurrió un problema al instalar el mod.'
+            };
+        }
+    }
+);
+
+/* =========================
+   FORGE: versión recomendada + LWJGL requerido
+========================= */
+
+// Pregunta a Forge cuál es su versión recomendada (o la más
+// reciente si no hay "recomendada") para una versión de MC.
+async function fetchForgeVersion(mcVersion) {
+
+    const promos = await httpsGetJson(
+        'https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json'
+    );
+
+    const entries = promos.promos || {};
+
+    return (
+        entries[`${mcVersion}-recommended`] ||
+        entries[`${mcVersion}-latest`] ||
+        null
+    );
+}
+
+// Lee el version.json oficial de Mojang para esa versión y
+// revisa qué LWJGL usa. Minecraft 1.13+ usa LWJGL 3; las
+// versiones más viejas usan LWJGL 2, que no soportamos aquí
+// (Forge en esas versiones necesita su instalador clásico,
+// no este método declarativo).
+async function fetchLwjgl3VersionForMinecraft(mcVersion) {
+
+    const manifest = await httpsGetJson(
+        'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'
+    );
+
+    const entry = (manifest.versions || []).find(
+        v => v.id === mcVersion
+    );
+
+    if (!entry) {
+        return null;
+    }
+
+    const versionData = await httpsGetJson(entry.url);
+
+    const lwjglLib = (versionData.libraries || []).find(
+        lib => lib.name &&
+            lib.name.startsWith('org.lwjgl:lwjgl:')
+    );
+
+    if (!lwjglLib) {
+        return null; // versión vieja, usa LWJGL 2
+    }
+
+    return lwjglLib.name.split(':').pop();
+}
+
+/* =========================
+   CREAR INSTANCIA NUEVA
+========================= */
+
+// Le pregunta a la API pública de Fabric cuál es la versión
+// de Fabric Loader compatible con la versión de Minecraft
+// elegida. Devuelve null si no hay ninguna (versión muy
+// vieja, por ejemplo).
+function fetchFabricLoaderVersion(mcVersion) {
+
+    return new Promise((resolve, reject) => {
+
+        https.get(
+            `https://meta.fabricmc.net/v2/versions/loader/${mcVersion}`,
+            (response) => {
+
+                let data = '';
+
+                response.on('data', chunk => {
+                    data += chunk;
+                });
+
+                response.on('end', () => {
+
+                    try {
+
+                        const parsed = JSON.parse(data);
+
+                        if (!parsed || parsed.length === 0) {
+                            resolve(null);
+                            return;
+                        }
+
+                        // Preferimos la primera versión marcada
+                        // como estable; si no hay, usamos la
+                        // primera de la lista (la más reciente).
+                        const stable =
+                            parsed.find(
+                                entry => entry.loader.stable
+                            );
+
+                        const chosen = stable || parsed[0];
+
+                        resolve(chosen.loader.version);
+
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+        ).on('error', reject);
+    });
+}
+
+// Convierte el nombre que escribió el usuario en un nombre
+// de carpeta seguro (sin caracteres raros).
+function sanitizeFolderName(name) {
+
+    const cleaned = name
+        .trim()
+        .replace(/[<>:"/\\|?*]/g, '')
+        .replace(/\s+/g, ' ');
+
+    return cleaned || 'Nueva Instancia';
+}
+
+// Si ya existe una carpeta con ese nombre, le agrega un
+// número al final para no pisar una instancia existente.
+function getAvailableInstanceFolder(baseName) {
+
+    let folderName = baseName;
+    let counter = 2;
+
+    while (
+        fs.existsSync(
+            path.join(instancesPath, folderName)
+        )
+    ) {
+
+        folderName = `${baseName} (${counter})`;
+        counter++;
+    }
+
+    return folderName;
+}
+
+ipcMain.handle(
+    'create-instance',
+    async (event, { name, version, loader }) => {
+
+        try {
+
+            // Si eligieron Fabric, primero confirmamos que
+            // existe una versión compatible ANTES de crear
+            // ninguna carpeta (evita dejar una instancia a
+            // medias si la versión no es compatible).
+            let fabricLoaderVersion = null;
+
+            if (loader === 'fabric') {
+
+                fabricLoaderVersion =
+                    await fetchFabricLoaderVersion(version);
+
+                if (!fabricLoaderVersion) {
+
+                    return {
+                        success: false,
+                        error:
+                            'Fabric no tiene una versión ' +
+                            'compatible con Minecraft ' +
+                            version + '.'
+                    };
+                }
+            }
+
+
+            // Lo mismo para Forge — además necesitamos saber
+            // qué LWJGL usa esa versión de Minecraft. Si no
+            // usa LWJGL 3, es una versión muy vieja y Forge
+            // ahí necesita su instalador clásico (no lo
+            // soportamos desde aquí todavía).
+            let forgeVersion = null;
+            let lwjglVersion = null;
+
+            if (loader === 'forge') {
+
+                lwjglVersion =
+                    await fetchLwjgl3VersionForMinecraft(version);
+
+                if (!lwjglVersion) {
+
+                    return {
+                        success: false,
+                        error:
+                            'Forge automático solo está ' +
+                            'disponible para Minecraft 1.13 ' +
+                            'o más reciente.'
+                    };
+                }
+
+                forgeVersion =
+                    await fetchForgeVersion(version);
+
+                if (!forgeVersion) {
+
+                    return {
+                        success: false,
+                        error:
+                            'No se encontró una versión de ' +
+                            'Forge para Minecraft ' + version +
+                            ' (o el servidor de Forge no ' +
+                            'respondió).'
+                    };
+                }
+            }
+
+
+            const folderName = getAvailableInstanceFolder(
+                sanitizeFolderName(name)
+            );
+
+            const instanceDir = path.join(
+                instancesPath,
+                folderName
+            );
+
+            fs.mkdirSync(instanceDir, { recursive: true });
+
+            fs.mkdirSync(
+                path.join(instanceDir, '.minecraft'),
+                { recursive: true }
+            );
+
+
+            // instance.cfg: metadatos que Prism necesita
+            // para reconocer la instancia.
+            const instanceCfg = [
+                '[General]',
+                'InstanceType=OneSix',
+                `name=${folderName}`,
+                'iconKey=default'
+            ].join('\n') + '\n';
+
+            fs.writeFileSync(
+                path.join(instanceDir, 'instance.cfg'),
+                instanceCfg,
+                'utf8'
+            );
+
+
+            // mmc-pack.json: le dice a Prism qué versión de
+            // Minecraft (y de Fabric, si aplica) debe
+            // descargar la primera vez que se abra la
+            // instancia.
+            const components = [
+                {
+                    uid: 'net.minecraft',
+                    version: version,
+                    important: true
+                }
+            ];
+
+            if (loader === 'fabric') {
+
+                components.push({
+                    uid: 'net.fabricmc.intermediary',
+                    version: version
+                });
+
+                components.push({
+                    uid: 'net.fabricmc.fabric-loader',
+                    version: fabricLoaderVersion
+                });
+            }
+
+            if (loader === 'forge') {
+
+                components.push({
+                    uid: 'org.lwjgl3',
+                    version: lwjglVersion,
+                    dependencyOnly: true,
+                    cachedVolatile: true
+                });
+
+                components.push({
+                    uid: 'net.minecraftforge',
+                    version: forgeVersion
+                });
+            }
+
+            const mmcPack = {
+                components: components,
+                formatVersion: 1
+            };
+
+            fs.writeFileSync(
+                path.join(instanceDir, 'mmc-pack.json'),
+                JSON.stringify(mmcPack, null, 4),
+                'utf8'
+            );
+
+
+            console.log(
+                '✅ Instancia creada:',
+                folderName,
+                '-',
+                version,
+                loader === 'fabric'
+                    ? `(Fabric ${fabricLoaderVersion})`
+                    : loader === 'forge'
+                        ? `(Forge ${forgeVersion})`
+                        : '(Vanilla)'
+            );
+
+            return { success: true, folderName };
+
+        } catch (error) {
+
+            console.error(
+                'Error creando instancia:',
+                error
+            );
+
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+);
 
 /* =========================
    LANZAR INSTANCIA

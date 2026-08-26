@@ -115,6 +115,37 @@ contextBridge.exposeInMainWorld(
                 ),
 
 
+        getMinecraftVersions:
+            () =>
+                ipcRenderer.invoke(
+                    'get-minecraft-versions'
+                ),
+
+
+        createInstance:
+            (data) =>
+                ipcRenderer.invoke(
+                    'create-instance',
+                    data
+                ),
+
+
+        searchMods:
+            (query) =>
+                ipcRenderer.invoke(
+                    'search-mods',
+                    query
+                ),
+
+
+        installMod:
+            (data) =>
+                ipcRenderer.invoke(
+                    'install-mod',
+                    data
+                ),
+
+
         onLaunchError:
             (callback) =>
                 ipcRenderer.on(

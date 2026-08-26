@@ -539,7 +539,8 @@ async function loadInstances() {
                         img.remove();
 
                         createDefaultIcon(
-                            iconContainer
+                            iconContainer,
+                            instance.loader
                         );
 
                     }
@@ -551,7 +552,8 @@ async function loadInstances() {
             } else {
 
                 createDefaultIcon(
-                    iconContainer
+                    iconContainer,
+                    instance.loader
                 );
 
             }
@@ -736,7 +738,7 @@ async function loadInstances() {
    ICONO POR DEFECTO
 ========================================================= */
 
-function createDefaultIcon(container) {
+function createDefaultIcon(container, loader) {
 
     const svg =
         document.createElementNS(
@@ -757,15 +759,65 @@ function createDefaultIcon(container) {
     );
 
 
-    const paths = [
-        'M7 4h10v5H7z',
-        'M5 9h14v11H5z',
-        'M9 9v4M15 9v4',
-        'M9 17h6'
-    ];
+    // Un ícono distinto según qué trae la instancia, para
+    // reconocerlas de un vistazo en la lista.
+    const iconsByLoader = {
+
+        // Forge: yunque (el símbolo clásico de Forge)
+        forge: {
+            className: 'icon-forge',
+            paths: [
+                'M4 17h16',
+                'M6 17v-2.5c0-.8.7-1.5 1.5-1.5h9c.8 0 1.5.7 1.5 1.5V17',
+                'M9 13V9c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2v4',
+                'M9 7V5.5C9 4.7 9.7 4 10.5 4h3c.8 0 1.5.7 1.5 1.5V7'
+            ]
+        },
+
+        // Fabric: patrón de hilos/tejido
+        fabric: {
+            className: 'icon-fabric',
+            paths: [
+                'M4 4l16 16',
+                'M4 10l10 10',
+                'M4 16l4 4',
+                'M10 4l10 10',
+                'M16 4l4 4'
+            ]
+        },
+
+        // Vanilla (o sin loader): bloque simple
+        vanilla: {
+            className: 'icon-vanilla',
+            paths: [
+                'M7 4h10v5H7z',
+                'M5 9h14v11H5z',
+                'M9 9v4M15 9v4',
+                'M9 17h6'
+            ]
+        }
+    };
+
+    // instance.loader llega como texto para mostrar en
+    // pantalla (ej. "Forge 47.4.10", "Fabric 0.19.2"), así
+    // que lo normalizamos a una clave simple.
+    const loaderKey = (loader || '').toLowerCase();
+
+    let normalizedKey = 'vanilla';
+
+    if (loaderKey.includes('forge')) {
+        normalizedKey = 'forge';
+    } else if (loaderKey.includes('fabric')) {
+        normalizedKey = 'fabric';
+    }
+
+    const chosen =
+        iconsByLoader[normalizedKey] || iconsByLoader.vanilla;
+
+    svg.classList.add(chosen.className);
 
 
-    paths.forEach(d => {
+    chosen.paths.forEach(d => {
 
         const path =
             document.createElementNS(
@@ -1215,6 +1267,293 @@ async function loadAccountsList() {
 
 
 /* =========================================================
+   MODAL: CREAR INSTANCIA
+========================================================= */
+
+const createInstanceModal =
+    document.getElementById('create-instance-modal');
+
+const newInstanceNameInput =
+    document.getElementById('new-instance-name');
+
+const newInstanceVersionSelect =
+    document.getElementById('new-instance-version');
+
+let versionsLoaded = false;
+
+
+async function openCreateInstanceModal() {
+
+    createInstanceModal.classList.remove('hidden');
+
+    newInstanceNameInput.value = '';
+    newInstanceNameInput.focus();
+
+    if (versionsLoaded) {
+        return;
+    }
+
+    const versions =
+        await window.electronAPI.getMinecraftVersions();
+
+    if (!versions || versions.length === 0) {
+
+        newInstanceVersionSelect.innerHTML = `
+            <option value="">
+                No se pudo cargar la lista (¿sin internet?)
+            </option>
+        `;
+
+        return;
+    }
+
+    newInstanceVersionSelect.innerHTML = versions
+        .map(v => `<option value="${v}">${v}</option>`)
+        .join('');
+
+    versionsLoaded = true;
+
+}
+
+function closeCreateInstanceModal() {
+
+    createInstanceModal.classList.add('hidden');
+}
+
+
+document
+    .getElementById('open-create-instance')
+    .addEventListener('click', openCreateInstanceModal);
+
+document
+    .getElementById('cancel-create-instance')
+    .addEventListener('click', closeCreateInstanceModal);
+
+// Cerrar si haces clic fuera del cuadro del modal
+createInstanceModal.addEventListener('click', event => {
+
+    if (event.target === createInstanceModal) {
+        closeCreateInstanceModal();
+    }
+});
+
+
+document
+    .getElementById('confirm-create-instance')
+    .addEventListener('click', async () => {
+
+        const name = newInstanceNameInput.value.trim();
+        const version = newInstanceVersionSelect.value;
+
+        const loader =
+            document.getElementById('new-instance-loader').value;
+
+        if (!name) {
+            showToast('Ponle un nombre a la instancia.');
+            return;
+        }
+
+        if (!version) {
+            showToast('Selecciona una versión de Minecraft.');
+            return;
+        }
+
+        const confirmButton =
+            document.getElementById('confirm-create-instance');
+
+        confirmButton.disabled = true;
+
+        const result =
+            await window.electronAPI.createInstance({
+                name,
+                version,
+                loader
+            });
+
+        confirmButton.disabled = false;
+
+        if (result && result.success) {
+
+            closeCreateInstanceModal();
+            showToast(`Instancia "${result.folderName}" creada.`);
+            loadInstances();
+
+        } else {
+
+            showToast(
+                (result && result.error) ||
+                'No se pudo crear la instancia. Intenta de nuevo.'
+            );
+        }
+
+    });
+
+
+/* =========================================================
+   PÁGINA DE MODS (buscar/instalar desde Modrinth)
+========================================================= */
+
+const modsInstanceSelect =
+    document.getElementById('mods-instance-select');
+
+const modsSearchInput =
+    document.getElementById('mods-search-input');
+
+const modsResults =
+    document.getElementById('mods-results');
+
+
+// Llena el selector con las instancias que ya existen,
+// para elegir dónde instalar el mod.
+async function loadModsInstanceOptions() {
+
+    const instances =
+        await window.electronAPI.getInstances();
+
+    if (!instances || instances.length === 0) {
+
+        modsInstanceSelect.innerHTML = `
+            <option value="">Sin instancias creadas</option>
+        `;
+
+        return;
+    }
+
+    modsInstanceSelect.innerHTML =
+        '<option value="">Elige una instancia...</option>' +
+        instances
+            .map(instance => `
+                <option value="${instance.id}">
+                    ${instance.name} (${instance.loader})
+                </option>
+            `)
+            .join('');
+}
+
+
+async function searchMods() {
+
+    const query = modsSearchInput.value.trim();
+
+    if (!query) {
+        showToast('Escribe algo para buscar.');
+        return;
+    }
+
+    modsResults.innerHTML = `
+        <div class="loading">Buscando...</div>
+    `;
+
+    const mods = await window.electronAPI.searchMods(query);
+
+    if (!mods || mods.length === 0) {
+
+        modsResults.innerHTML = `
+            <div class="loading">
+                No se encontraron mods para "${query}".
+            </div>
+        `;
+
+        return;
+    }
+
+    modsResults.innerHTML = '';
+
+    mods.forEach(mod => {
+
+        const card = document.createElement('div');
+        card.className = 'instance-card';
+
+        const icon = document.createElement('img');
+        icon.className = 'mod-card-icon';
+        icon.src = mod.iconUrl || '';
+        icon.alt = '';
+
+        icon.addEventListener('error', () => {
+            icon.style.visibility = 'hidden';
+        });
+
+
+        const info = document.createElement('div');
+        info.className = 'mod-card-info';
+
+        const title = document.createElement('strong');
+        title.textContent = mod.title;
+
+        const description = document.createElement('span');
+        description.textContent = mod.description;
+
+        info.appendChild(title);
+        info.appendChild(description);
+
+
+        const button = document.createElement('button');
+        button.className = 'play-button small';
+        button.type = 'button';
+
+        const buttonText = document.createElement('span');
+        buttonText.textContent = 'INSTALAR';
+        button.appendChild(buttonText);
+
+        button.addEventListener('click', async () => {
+
+            const instanceId = modsInstanceSelect.value;
+
+            if (!instanceId) {
+                showToast('Primero elige una instancia.');
+                return;
+            }
+
+            button.disabled = true;
+            buttonText.textContent = 'INSTALANDO...';
+
+            const result = await window.electronAPI.installMod({
+                instanceId,
+                projectId: mod.id
+            });
+
+            if (result && result.success) {
+
+                buttonText.textContent = 'INSTALADO';
+                showToast(`"${mod.title}" instalado.`);
+
+            } else {
+
+                button.disabled = false;
+                buttonText.textContent = 'INSTALAR';
+
+                showToast(
+                    (result && result.error) ||
+                    'No se pudo instalar el mod.'
+                );
+            }
+
+        });
+
+
+        card.appendChild(icon);
+        card.appendChild(info);
+        card.appendChild(button);
+
+        modsResults.appendChild(card);
+
+    });
+}
+
+
+document
+    .getElementById('mods-search-button')
+    .addEventListener('click', searchMods);
+
+modsSearchInput.addEventListener('keydown', event => {
+
+    if (event.key === 'Enter') {
+        searchMods();
+    }
+});
+
+
+/* =========================================================
    INICIAR
 ========================================================= */
 
@@ -1222,3 +1561,4 @@ loadInstances();
 loadSettings();
 loadAccount();
 loadAccountsList();
+loadModsInstanceOptions();

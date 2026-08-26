@@ -1298,6 +1298,20 @@ input:focus-visible {
         rgba(255, 255, 255, 0.65);
 }
 
+/* Colores distintos según el mod loader, para reconocer
+   las instancias de un vistazo en la lista. */
+.instance-icon svg.icon-forge {
+    color: #fb923c; /* naranja, como el fuego de la fragua */
+}
+
+.instance-icon svg.icon-fabric {
+    color: #38bdf8; /* celeste, como el hilo de Fabric */
+}
+
+.instance-icon svg.icon-vanilla {
+    color: #4ade80; /* verde, como el bloque de pasto */
+}
+
 /* =========================================================
    RESPONSIVE
 ========================================================= */
@@ -1400,6 +1414,228 @@ input:focus-visible {
 
 .instance-icon img.face-icon {
     image-rendering: pixelated;
+}
+
+/* =========================================================
+   MODAL: CREAR INSTANCIA
+========================================================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.55);
+
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+
+    z-index: 500;
+
+    animation: toastIn 0.18s ease;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.modal {
+    width: 360px;
+
+    padding: 28px;
+
+    border-radius: 16px;
+
+    background:
+        linear-gradient(
+            150deg,
+            rgba(35, 20, 45, 0.97),
+            rgba(10, 8, 14, 0.97)
+        );
+
+    border:
+        1px solid rgba(255, 255, 255, 0.12);
+
+    box-shadow:
+        0 20px 60px
+        rgba(0, 0, 0, 0.5);
+}
+
+.modal h2 {
+    font-family: var(--font-display);
+
+    font-size: 20px;
+    font-weight: 700;
+
+    margin-bottom: 8px;
+}
+
+.modal-hint {
+    font-size: 12.5px;
+
+    color: var(--muted);
+
+    margin-bottom: 20px;
+
+    line-height: 1.4;
+}
+
+.modal-label {
+    display: block;
+
+    font-size: 12.5px;
+
+    color: var(--muted);
+
+    margin-bottom: 16px;
+}
+
+.modal-label input,
+.modal-label select {
+    display: block;
+
+    width: 100%;
+
+    margin-top: 6px;
+
+    padding: 10px 12px;
+
+    border-radius: 8px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.14);
+
+    background: rgba(255, 255, 255, 0.06);
+
+    color: var(--text);
+
+    font-family: var(--font-body);
+    font-size: 13.5px;
+}
+
+.modal-label select option {
+    background: #14121a;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+
+    margin-top: 22px;
+}
+
+.modal-actions .play-button.small {
+    flex: 1;
+}
+
+.modal-button-secondary {
+    flex: 1;
+
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: var(--muted);
+
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: background 0.18s, color 0.18s;
+}
+
+.modal-button-secondary:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+}
+
+/* =========================================================
+   PÁGINA DE MODS
+========================================================= */
+
+.mods-controls {
+    display: flex;
+    gap: 10px;
+
+    width: 100%;
+    max-width: 760px;
+
+    margin-bottom: 20px;
+}
+
+.mods-controls select,
+.mods-controls input {
+    padding: 10px 14px;
+
+    border-radius: 9px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.14);
+
+    background: rgba(255, 255, 255, 0.06);
+
+    color: var(--text);
+
+    font-family: var(--font-body);
+    font-size: 13px;
+}
+
+.mods-controls select {
+    flex: 0 0 200px;
+}
+
+.mods-controls input {
+    flex: 1;
+}
+
+.mods-controls select option {
+    background: #14121a;
+}
+
+.mod-card-icon {
+    width: 42px;
+    height: 42px;
+
+    border-radius: 10px;
+
+    object-fit: cover;
+
+    flex-shrink: 0;
+
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.mod-card-info {
+    flex: 1;
+
+    min-width: 0;
+
+    text-align: left;
+}
+
+.mod-card-info strong {
+    display: block;
+
+    font-size: 14px;
+}
+
+.mod-card-info span {
+    display: block;
+
+    margin-top: 3px;
+
+    font-size: 12px;
+
+    color: var(--muted);
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* =========================================================
