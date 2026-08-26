@@ -146,6 +146,22 @@ contextBridge.exposeInMainWorld(
                 ),
 
 
+        getInstalledMods:
+            (instanceId) =>
+                ipcRenderer.invoke(
+                    'get-installed-mods',
+                    instanceId
+                ),
+
+
+        deleteMod:
+            (data) =>
+                ipcRenderer.invoke(
+                    'delete-mod',
+                    data
+                ),
+
+
         onLaunchError:
             (callback) =>
                 ipcRenderer.on(

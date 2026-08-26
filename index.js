@@ -1198,7 +1198,7 @@ ipcMain.handle(
             const modsDir = path.join(
                 instancesPath,
                 instanceId,
-                '.minecraft',
+                'minecraft',
                 'mods'
             );
 
@@ -1230,6 +1230,108 @@ ipcMain.handle(
             return {
                 success: false,
                 error: 'Ocurrió un problema al instalar el mod.'
+            };
+        }
+    }
+);
+
+/* =========================
+   VER / BORRAR MODS INSTALADOS
+========================= */
+
+ipcMain.handle(
+    'get-installed-mods',
+    (event, instanceId) => {
+
+        try {
+
+            const modsDir = path.join(
+                instancesPath,
+                instanceId,
+                'minecraft',
+                'mods'
+            );
+
+            if (!fs.existsSync(modsDir)) {
+                return [];
+            }
+
+            return fs.readdirSync(modsDir)
+                .filter(file => file.endsWith('.jar'))
+                .map(file => {
+
+                    const stats = fs.statSync(
+                        path.join(modsDir, file)
+                    );
+
+                    return {
+                        fileName: file,
+                        sizeMB: (
+                            stats.size / (1024 * 1024)
+                        ).toFixed(1)
+                    };
+                });
+
+        } catch (error) {
+
+            console.error(
+                'Error leyendo mods instalados:',
+                error
+            );
+
+            return [];
+        }
+    }
+);
+
+ipcMain.handle(
+    'delete-mod',
+    (event, { instanceId, fileName }) => {
+
+        try {
+
+            // Seguridad: nunca dejar que el nombre del
+            // archivo "se salga" de la carpeta de mods.
+            if (
+                !fileName ||
+                fileName.includes('/') ||
+                fileName.includes('\\') ||
+                fileName.includes('..')
+            ) {
+
+                return {
+                    success: false,
+                    error: 'Nombre de archivo no válido.'
+                };
+            }
+
+            const modPath = path.join(
+                instancesPath,
+                instanceId,
+                'minecraft',
+                'mods',
+                fileName
+            );
+
+            if (!fs.existsSync(modPath)) {
+
+                return {
+                    success: false,
+                    error: 'El mod ya no existe.'
+                };
+            }
+
+            fs.unlinkSync(modPath);
+
+            return { success: true };
+
+        } catch (error) {
+
+            console.error('Error borrando mod:', error);
+
+            return {
+                success: false,
+                error: 'No se pudo borrar el mod.'
             };
         }
     }
@@ -1458,7 +1560,7 @@ ipcMain.handle(
             fs.mkdirSync(instanceDir, { recursive: true });
 
             fs.mkdirSync(
-                path.join(instanceDir, '.minecraft'),
+                path.join(instanceDir, 'minecraft'),
                 { recursive: true }
             );
 

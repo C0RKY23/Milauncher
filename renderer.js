@@ -1402,6 +1402,12 @@ const modsSearchInput =
 const modsResults =
     document.getElementById('mods-results');
 
+const installedModsSection =
+    document.getElementById('installed-mods-section');
+
+const installedModsList =
+    document.getElementById('installed-mods-list');
+
 
 // Llena el selector con las instancias que ya existen,
 // para elegir dónde instalar el mod.
@@ -1429,6 +1435,112 @@ async function loadModsInstanceOptions() {
             `)
             .join('');
 }
+
+
+async function loadInstalledMods() {
+
+    const instanceId = modsInstanceSelect.value;
+
+    if (!instanceId) {
+
+        installedModsSection.classList.add('hidden');
+        return;
+    }
+
+    const mods =
+        await window.electronAPI.getInstalledMods(instanceId);
+
+    installedModsSection.classList.remove('hidden');
+
+    if (!mods || mods.length === 0) {
+
+        installedModsList.innerHTML = `
+            <div class="loading">
+                Esta instancia todavía no tiene mods instalados.
+            </div>
+        `;
+
+        return;
+    }
+
+    installedModsList.innerHTML = '';
+
+    mods.forEach(mod => {
+
+        const card = document.createElement('div');
+        card.className = 'instance-card';
+
+        const info = document.createElement('div');
+        info.className = 'instance-info';
+
+        const name = document.createElement('strong');
+        name.textContent = mod.fileName;
+
+        const size = document.createElement('span');
+        size.textContent = `${mod.sizeMB} MB`;
+
+        info.appendChild(name);
+        info.appendChild(size);
+
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'mod-delete-button';
+        deleteButton.type = 'button';
+        deleteButton.title = 'Borrar mod';
+
+        deleteButton.innerHTML = `
+            <svg viewBox="0 0 24 24">
+                <path d="M4 7h16"/>
+                <path d="M10 11v6M14 11v6"/>
+                <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/>
+                <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+        `;
+
+        deleteButton.addEventListener('click', async () => {
+
+            const confirmed = window.confirm(
+                `¿Borrar "${mod.fileName}"? Esta acción no se puede deshacer.`
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            const result = await window.electronAPI.deleteMod({
+                instanceId,
+                fileName: mod.fileName
+            });
+
+            if (result && result.success) {
+
+                showToast(`"${mod.fileName}" borrado.`);
+                loadInstalledMods();
+
+            } else {
+
+                showToast(
+                    (result && result.error) ||
+                    'No se pudo borrar el mod.'
+                );
+            }
+
+        });
+
+
+        card.appendChild(info);
+        card.appendChild(deleteButton);
+
+        installedModsList.appendChild(card);
+
+    });
+}
+
+
+modsInstanceSelect.addEventListener(
+    'change',
+    loadInstalledMods
+);
 
 
 async function searchMods() {
@@ -1516,6 +1628,7 @@ async function searchMods() {
 
                 buttonText.textContent = 'INSTALADO';
                 showToast(`"${mod.title}" instalado.`);
+                loadInstalledMods();
 
             } else {
 
