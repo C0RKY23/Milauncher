@@ -628,6 +628,100 @@ async function loadInstances() {
 
 
             /* =================================================
+               BOTONES EDITAR / BORRAR
+            ================================================= */
+
+            const actions =
+                document.createElement('div');
+
+            actions.className = 'instance-actions';
+
+
+            const editButton =
+                document.createElement('button');
+
+            editButton.className = 'instance-icon-button';
+            editButton.type = 'button';
+            editButton.title = 'Renombrar';
+
+            editButton.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>
+                </svg>
+            `;
+
+            editButton.addEventListener('click', event => {
+
+                event.stopPropagation();
+                playSound(soundClick);
+
+                openRenameInstanceModal(
+                    instance.id,
+                    instance.name
+                );
+
+            });
+
+
+            const deleteButton =
+                document.createElement('button');
+
+            deleteButton.className =
+                'instance-icon-button danger';
+
+            deleteButton.type = 'button';
+            deleteButton.title = 'Borrar';
+
+            deleteButton.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 7h16"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/>
+                    <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+            `;
+
+            deleteButton.addEventListener('click', async event => {
+
+                event.stopPropagation();
+                playSound(soundClick);
+
+                const confirmed = window.confirm(
+                    `¿Borrar "${instance.name}"? Esta acción ` +
+                    'no se puede deshacer.'
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                const result =
+                    await window.electronAPI.deleteInstance(
+                        instance.id
+                    );
+
+                if (result && result.success) {
+
+                    showToast(`"${instance.name}" borrada.`);
+                    loadInstances();
+
+                } else {
+
+                    showToast(
+                        (result && result.error) ||
+                        'No se pudo borrar la instancia.'
+                    );
+                }
+
+            });
+
+
+            actions.appendChild(editButton);
+            actions.appendChild(deleteButton);
+
+
+            /* =================================================
                ARMAR TARJETA
             ================================================= */
 
@@ -637,6 +731,10 @@ async function loadInstances() {
 
             card.appendChild(
                 info
+            );
+
+            card.appendChild(
+                actions
             );
 
             card.appendChild(
@@ -1336,6 +1434,91 @@ createInstanceModal.addEventListener('click', event => {
         closeCreateInstanceModal();
     }
 });
+
+
+/* =========================================================
+   MODAL: RENOMBRAR INSTANCIA
+========================================================= */
+
+const renameInstanceModal =
+    document.getElementById('rename-instance-modal');
+
+const renameInstanceInput =
+    document.getElementById('rename-instance-input');
+
+let instanceBeingRenamed = null;
+
+
+function openRenameInstanceModal(instanceId, currentName) {
+
+    instanceBeingRenamed = instanceId;
+
+    renameInstanceInput.value = currentName;
+
+    renameInstanceModal.classList.remove('hidden');
+
+    renameInstanceInput.focus();
+    renameInstanceInput.select();
+}
+
+function closeRenameInstanceModal() {
+
+    renameInstanceModal.classList.add('hidden');
+    instanceBeingRenamed = null;
+}
+
+
+document
+    .getElementById('cancel-rename-instance')
+    .addEventListener('click', closeRenameInstanceModal);
+
+renameInstanceModal.addEventListener('click', event => {
+
+    if (event.target === renameInstanceModal) {
+        closeRenameInstanceModal();
+    }
+});
+
+renameInstanceInput.addEventListener('keydown', event => {
+
+    if (event.key === 'Enter') {
+        document
+            .getElementById('confirm-rename-instance')
+            .click();
+    }
+});
+
+document
+    .getElementById('confirm-rename-instance')
+    .addEventListener('click', async () => {
+
+        const newName = renameInstanceInput.value.trim();
+
+        if (!newName) {
+            showToast('El nombre no puede estar vacío.');
+            return;
+        }
+
+        const result = await window.electronAPI.renameInstance({
+            instanceId: instanceBeingRenamed,
+            newName
+        });
+
+        if (result && result.success) {
+
+            closeRenameInstanceModal();
+            showToast('Instancia renombrada.');
+            loadInstances();
+
+        } else {
+
+            showToast(
+                (result && result.error) ||
+                'No se pudo renombrar la instancia.'
+            );
+        }
+
+    });
 
 
 document

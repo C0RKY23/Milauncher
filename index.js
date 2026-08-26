@@ -1236,6 +1236,126 @@ ipcMain.handle(
 );
 
 /* =========================
+   RENOMBRAR / BORRAR INSTANCIA
+========================= */
+
+ipcMain.handle(
+    'rename-instance',
+    (event, { instanceId, newName }) => {
+
+        try {
+
+            const configPath = path.join(
+                instancesPath,
+                instanceId,
+                'instance.cfg'
+            );
+
+            if (!fs.existsSync(configPath)) {
+
+                return {
+                    success: false,
+                    error: 'No se encontró la instancia.'
+                };
+            }
+
+            const cleanName =
+                newName.trim() || 'Sin nombre';
+
+            let lines = fs
+                .readFileSync(configPath, 'utf8')
+                .split('\n');
+
+            let found = false;
+
+            lines = lines.map(line => {
+
+                if (line.startsWith('name=')) {
+                    found = true;
+                    return `name=${cleanName}`;
+                }
+
+                return line;
+            });
+
+            if (!found) {
+                lines.push(`name=${cleanName}`);
+            }
+
+            fs.writeFileSync(
+                configPath,
+                lines.filter(Boolean).join('\n') + '\n',
+                'utf8'
+            );
+
+            return { success: true };
+
+        } catch (error) {
+
+            console.error('Error renombrando instancia:', error);
+
+            return {
+                success: false,
+                error: 'No se pudo renombrar la instancia.'
+            };
+        }
+    }
+);
+
+ipcMain.handle(
+    'delete-instance',
+    (event, instanceId) => {
+
+        try {
+
+            // Seguridad: el id nunca debe poder "salirse"
+            // de la carpeta de instancias.
+            if (
+                !instanceId ||
+                instanceId.includes('/') ||
+                instanceId.includes('\\') ||
+                instanceId.includes('..')
+            ) {
+
+                return {
+                    success: false,
+                    error: 'Instancia no válida.'
+                };
+            }
+
+            const instanceDir = path.join(
+                instancesPath,
+                instanceId
+            );
+
+            if (!fs.existsSync(instanceDir)) {
+
+                return {
+                    success: false,
+                    error: 'La instancia ya no existe.'
+                };
+            }
+
+            fs.rmSync(instanceDir, {
+                recursive: true,
+                force: true
+            });
+
+            return { success: true };
+
+        } catch (error) {
+
+            console.error('Error borrando instancia:', error);
+
+            return {
+                success: false,
+                error: 'No se pudo borrar la instancia.'
+            };
+        }
+    }
+);
+
+/* =========================
    VER / BORRAR MODS INSTALADOS
 ========================= */
 

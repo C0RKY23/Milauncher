@@ -492,6 +492,51 @@
 
 
             <!-- =================================================
+                 MODAL: RENOMBRAR INSTANCIA
+            ================================================== -->
+
+            <div id="rename-instance-modal" class="modal-overlay hidden">
+
+                <div class="modal">
+
+                    <h2>Renombrar instancia</h2>
+
+                    <label class="modal-label">
+                        Nuevo nombre
+
+                        <input
+                            type="text"
+                            id="rename-instance-input"
+                            maxlength="40"
+                        >
+                    </label>
+
+                    <div class="modal-actions">
+
+                        <button
+                            id="cancel-rename-instance"
+                            class="modal-button-secondary"
+                            type="button"
+                        >
+                            Cancelar
+                        </button>
+
+                        <button
+                            id="confirm-rename-instance"
+                            class="play-button small"
+                            type="button"
+                        >
+                            <span>GUARDAR</span>
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
                  CUENTA
             ================================================== -->
 

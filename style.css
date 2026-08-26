@@ -1630,6 +1630,62 @@ input:focus-visible {
     stroke-linecap: round;
 }
 
+/* =========================================================
+   ACCIONES DE INSTANCIA (editar / borrar)
+========================================================= */
+
+.instance-actions {
+    display: flex;
+    gap: 8px;
+
+    flex-shrink: 0;
+}
+
+.instance-icon-button {
+    width: 36px;
+    height: 36px;
+
+    border-radius: 8px;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    background: rgba(255, 255, 255, 0.05);
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: background 0.18s, color 0.18s, transform 0.15s;
+}
+
+.instance-icon-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+.instance-icon-button:active {
+    transform: scale(0.9);
+}
+
+.instance-icon-button.danger:hover {
+    background: rgba(248, 113, 113, 0.2);
+    color: #f87171;
+}
+
+.instance-icon-button svg {
+    width: 15px;
+    height: 15px;
+
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
 .mods-controls {
     display: flex;
     gap: 10px;

@@ -162,6 +162,22 @@ contextBridge.exposeInMainWorld(
                 ),
 
 
+        renameInstance:
+            (data) =>
+                ipcRenderer.invoke(
+                    'rename-instance',
+                    data
+                ),
+
+
+        deleteInstance:
+            (instanceId) =>
+                ipcRenderer.invoke(
+                    'delete-instance',
+                    instanceId
+                ),
+
+
         onLaunchError:
             (callback) =>
                 ipcRenderer.on(
