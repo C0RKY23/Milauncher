@@ -363,6 +363,21 @@ function updateSelectedInstance(
                 'selected'
             );
 
+            const cardButton =
+                card.querySelector('.select-instance');
+
+            if (cardButton) {
+
+                cardButton.disabled = false;
+
+                const cardButtonText =
+                    cardButton.querySelector('span');
+
+                if (cardButtonText) {
+                    cardButtonText.textContent = 'SELECCIONAR';
+                }
+            }
+
         });
 
 
@@ -377,6 +392,21 @@ function updateSelectedInstance(
         selectedCard.classList.add(
             'selected'
         );
+
+        const selectedButton =
+            selectedCard.querySelector('.select-instance');
+
+        if (selectedButton) {
+
+            selectedButton.disabled = true;
+
+            const selectedButtonText =
+                selectedButton.querySelector('span');
+
+            if (selectedButtonText) {
+                selectedButtonText.textContent = 'SELECCIONADA';
+            }
+        }
 
     }
 
@@ -618,8 +648,17 @@ async function loadInstances() {
             const buttonText =
                 document.createElement('span');
 
+            const isAlreadySelected =
+                instance.id === selectedInstance;
+
             buttonText.textContent =
-                'SELECCIONAR';
+                isAlreadySelected ? 'SELECCIONADA' : 'SELECCIONAR';
+
+            button.disabled = isAlreadySelected;
+
+            if (isAlreadySelected) {
+                card.classList.add('selected');
+            }
 
 
             button.appendChild(
@@ -705,6 +744,16 @@ async function loadInstances() {
 
                     showToast(`"${instance.name}" borrada.`);
                     loadInstances();
+
+                    // Si la página de Mods tenía seleccionada
+                    // justo esta instancia, hay que limpiarla
+                    // para no seguir mostrando sus mods.
+                    if (modsInstanceSelect.value === instance.id) {
+                        modsInstanceSelect.value = '';
+                    }
+
+                    loadModsInstanceOptions();
+                    loadInstalledMods();
 
                 } else {
 
@@ -1509,6 +1558,7 @@ document
             closeRenameInstanceModal();
             showToast('Instancia renombrada.');
             loadInstances();
+            loadModsInstanceOptions();
 
         } else {
 
@@ -1560,6 +1610,7 @@ document
             closeCreateInstanceModal();
             showToast(`Instancia "${result.folderName}" creada.`);
             loadInstances();
+            loadModsInstanceOptions();
 
         } else {
 
@@ -1594,29 +1645,71 @@ const installedModsList =
 
 // Llena el selector con las instancias que ya existen,
 // para elegir dónde instalar el mod.
+//
+// IMPORTANTE: reconstruimos las opciones con el DOM
+// (createElement/appendChild) en vez de reemplazar todo
+// el innerHTML de golpe. Reescribir el innerHTML de un
+// <select> mientras el navegador todavía tiene "memoria"
+// de un clic reciente (por ejemplo, justo después de
+// cerrar la ventanita de confirmar borrado) a veces deja
+// el menú desplegable sin abrir con el mouse hasta que
+// se interactúa con teclado. Reconstruir nodo por nodo
+// es más robusto contra ese problema.
 async function loadModsInstanceOptions() {
+
+    const previousValue = modsInstanceSelect.value;
+
+    while (modsInstanceSelect.firstChild) {
+        modsInstanceSelect.removeChild(
+            modsInstanceSelect.firstChild
+        );
+    }
 
     const instances =
         await window.electronAPI.getInstances();
 
     if (!instances || instances.length === 0) {
 
-        modsInstanceSelect.innerHTML = `
-            <option value="">Sin instancias creadas</option>
-        `;
+        const emptyOption =
+            document.createElement('option');
+
+        emptyOption.value = '';
+        emptyOption.textContent = 'Sin instancias creadas';
+
+        modsInstanceSelect.appendChild(emptyOption);
 
         return;
     }
 
-    modsInstanceSelect.innerHTML =
-        '<option value="">Elige una instancia...</option>' +
-        instances
-            .map(instance => `
-                <option value="${instance.id}">
-                    ${instance.name} (${instance.loader})
-                </option>
-            `)
-            .join('');
+    const placeholderOption =
+        document.createElement('option');
+
+    placeholderOption.value = '';
+    placeholderOption.textContent = 'Elige una instancia...';
+
+    modsInstanceSelect.appendChild(placeholderOption);
+
+    instances.forEach(instance => {
+
+        const option =
+            document.createElement('option');
+
+        option.value = instance.id;
+        option.textContent =
+            `${instance.name} (${instance.loader})`;
+
+        modsInstanceSelect.appendChild(option);
+
+    });
+
+    // Si la instancia que tenías elegida sigue existiendo,
+    // se la dejamos seleccionada; si no, se queda vacío.
+    const stillExists = instances.some(
+        instance => instance.id === previousValue
+    );
+
+    modsInstanceSelect.value =
+        stillExists ? previousValue : '';
 }
 
 
