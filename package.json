@@ -1,15 +1,54 @@
 {
-  "name": "milauncher",
+  "name": "crk-launcher",
   "version": "1.0.0",
-  "description": "",
+  "description": "Launcher de Minecraft con interfaz propia, sobre Prism Launcher / PolyMC",
   "main": "index.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:linux": "electron-builder --linux",
+    "dist:win": "electron-builder --win"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "Corky",
+    "email": "corky23322@gmail.com"
+  },
+  "license": "MIT",
   "devDependencies": {
-    "electron": "^43.4.1"
+    "electron": "^43.4.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.corky.crklauncher",
+    "productName": "CRK Launcher",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "index.js",
+      "preload.js",
+      "renderer.js",
+      "style.css",
+      "fonts/**/*",
+      "sounds/**/*"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Game"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
